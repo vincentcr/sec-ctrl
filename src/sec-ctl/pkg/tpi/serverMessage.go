@@ -12,7 +12,8 @@ type ServerMessage struct {
 }
 
 func (m ServerMessage) Write(w io.Writer) error {
-	return writeMessage(message{Code: int(m.Code), Data: m.Data}, w)
+	bm := baseMessage{Code: int(m.Code), Data: m.Data}
+	return bm.write(w)
 }
 
 func (m ServerMessage) String() string {

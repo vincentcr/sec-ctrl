@@ -10,56 +10,60 @@ import (
 
 var crlf = []byte("\r\n")
 
-// message represents a generic Envisalink TPI message
-type message struct {
+// baseMessage represents a generic Envisalink TPI baseMessage
+type baseMessage struct {
 	Code int
 	Data []byte
 }
 
-func writeMessage(msg message, w io.Writer) error {
-	msgBytes := msg.encode()
-	_, err := w.Write(msgBytes)
+func (m baseMessage) write(w io.Writer) error {
+	dat := append(m.encode(), crlf...)
+	_, err := w.Write(dat)
 	return err
 }
 
-func (msg message) encode() []byte {
-	encoded := EncodeIntCode(msg.Code)
+func (m baseMessage) encode() []byte {
+	enc := EncodeIntCode(m.Code)
 
-	if msg.Data != nil {
-		encoded = append(encoded, msg.Data...)
+	if m.Data != nil {
+		enc = append(enc, m.Data...)
 	}
 
-	checksum := msgChecksum(encoded)
-
-	return append(append(encoded, []byte(checksum)...), crlf...)
+	chk := msgChecksum(enc)
+	dat := append(enc, []byte(chk)...)
+	return dat
 }
 
 // ReadAvailableMessages reads all available messages from the supplied reader
-func readAvailableMessages(reader io.Reader) ([]message, error) {
+func readAvailableMessages(reader io.Reader) ([]baseMessage, error) {
 
 	packetBytes, err := readUntilMarker(reader, crlf)
 	if err != nil {
 		return nil, err
 	}
 	packets := bytes.Split(packetBytes, crlf)
-	msgs := make([]message, 0, len(packets))
+	msgs := make([]baseMessage, 0, len(packets))
 	for _, packet := range packets {
 		if len(packet) > 0 {
-			msg, err := msgDecode(packet)
+			m, err := msgDecode(packet)
 			if err != nil {
 				return nil, err
 			}
-			msgs = append(msgs, msg)
+			msgs = append(msgs, m)
 		}
 	}
 	return msgs, nil
 }
 
+// reads from the supplied reader until <marker> bytes are read as the last bytes
+// of a Read call.
 func readUntilMarker(reader io.Reader, marker []byte) ([]byte, error) {
 
 	data := make([]byte, 0, 4096)
 	buf := make([]byte, 2048)
 	done := false
+
+	markerLen := len(marker)
 
 	for !done {
 		nRead, err := reader.Read(buf)
@@ -70,18 +74,20 @@ func readUntilMarker(reader io.Reader, marker []byte) ([]byte, error) {
 			return nil, fmt.Errorf("Unexpected end of input")
 		}
 		data = append(data, buf[:nRead]...)
-
-		// done when <marker bytes> are the last bytes of the transmission
-		potentialMarker := data[len(data)-len(marker):]
-		done = bytes.Compare(marker, potentialMarker) == 0
+		dataLen := len(data)
+		if dataLen >= markerLen {
+			// done when <marker bytes> are the last bytes of the transmission
+			potentialMarker := data[dataLen-markerLen:]
+			done = bytes.Compare(marker, potentialMarker) == 0
+		}
 	}
 
 	return data, nil
 }
 
-func msgDecode(msgBytes []byte) (message, error) {
+func msgDecode(msgBytes []byte) (baseMessage, error) {
 	if len(msgBytes) < 5 {
-		return message{}, fmt.Errorf("Got %d bytes, need at least 5", len(msgBytes))
+		return baseMessage{}, fmt.Errorf("Got %d bytes, need at least 5", len(msgBytes))
 	}
 
 	// CODE-DATA-CHECKSUM
@@ -97,16 +103,16 @@ func msgDecode(msgBytes []byte) (message, error) {
 	// verify checksum
 	actualChecksum := msgChecksum(msgBytes[:dataEnd])
 	if strings.ToLower(expectedChecksum) != strings.ToLower(actualChecksum) {
-		return message{}, fmt.Errorf("failed to decode message %v: data %v, expected checksum %v, actual %v",
+		return baseMessage{}, fmt.Errorf("failed to decode message %v: data %v, expected checksum %v, actual %v",
 			msgBytes, data, expectedChecksum, actualChecksum)
 	}
 
 	code, err := DecodeIntCode(codeBytes)
 	if err != nil {
-		return message{}, err
+		return baseMessage{}, err
 	}
 
-	msg := message{
+	msg := baseMessage{
 		Code: code,
 		Data: data,
 	}

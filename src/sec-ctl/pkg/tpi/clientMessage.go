@@ -16,7 +16,8 @@ func (m ClientMessage) String() string {
 }
 
 func (m ClientMessage) Write(w io.Writer) error {
-	return writeMessage(message{Code: int(m.Code), Data: m.Data}, w)
+	bm := baseMessage{Code: int(m.Code), Data: m.Data}
+	return bm.write(w)
 }
 
 // ReadAvailableClientMessages returns all client messages that can be read from the reader
