@@ -7,7 +7,7 @@ CREATE TABLE users(
   password TEXT NOT NULL
 );
 
-DROP TABLE IF EXISTS devices CASCADE;
+DROP TABLE IF EXISTS sites CASCADE;
 CREATE TABLE sites(
   id uuid PRIMARY KEY,
   owner_id uuid REFERENCES users(id) ON DELETE RESTRICT,

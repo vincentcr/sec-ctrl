@@ -3,9 +3,9 @@ package db
 import (
 	"encoding/json"
 	"fmt"
+	"sec-ctl/cloud/config"
 	"strings"
 	"time"
-	"sec-ctl/cloud/config"
 
 	"github.com/jmoiron/sqlx"
 	// load postgres driver
@@ -63,33 +63,6 @@ func OpenDB(cfg config.Config) (*DB, error) {
 	return db, nil
 }
 
-func (db *DB) AuthUser(email string, password string) (User, error) {
-
-	var u User
-	err := db.conn.Select(&u, "SELECT * FROM users where email = $1 AND password = crypt($2, password)", email, password)
-	if err != nil {
-		return User{}, err
-	}
-
-	return u, nil
-}
-
-func (db *DB) AuthUserByToken(token string) (User, error) {
-	var u User
-	err := db.conn.Get(&u, `
-		SELECT users.*
-			FROM users
-				JOIN auth_tokens ON auth_tokens.rec_id = users.id
-			WHERE token = $1
-	`)
-
-	if err != nil {
-		return User{}, err
-	}
-
-	return u, nil
-}
-
 func (db *DB) CreateUser(email string, password string) (User, string, error) {
 
 	u := User{
@@ -104,9 +77,9 @@ func (db *DB) CreateUser(email string, password string) (User, string, error) {
 	r := tx.QueryRow(`
 		INSERT
 			INTO users(id, email, password)
-			VALUES (gen_random_uuid(), $2, crypt($3, gen_salt('fo', $4))
+			VALUES (gen_random_uuid(), $1, crypt($2, gen_salt('bf', $3)))
 			RETURNING id
-	`, u.ID, email, password, bcryptSaltSize)
+	`, email, password, bcryptSaltSize)
 	err = r.Scan(&u.ID)
 	if err != nil {
 		return User{}, "", err
@@ -122,6 +95,33 @@ func (db *DB) CreateUser(email string, password string) (User, string, error) {
 	}
 
 	return u, tok, nil
+}
+
+func (db *DB) AuthUser(email string, password string) (User, error) {
+
+	var u User
+	err := db.conn.Get(&u, "SELECT id, email FROM users where email = $1 AND password = crypt($2, password)", email, password)
+	if err != nil {
+		return User{}, err
+	}
+
+	return u, nil
+}
+
+func (db *DB) AuthUserByToken(token string) (User, error) {
+	var u User
+	err := db.conn.Get(&u, `
+			SELECT users.*
+				FROM users
+					JOIN auth_tokens ON auth_tokens.rec_id = users.id
+				WHERE token = $1
+		`)
+
+	if err != nil {
+		return User{}, err
+	}
+
+	return u, nil
 }
 
 func (db *DB) AuthSiteByToken(token string) (Site, error) {
@@ -235,7 +235,7 @@ func (db *DB) SaveEvent(level string, tstamp time.Time, siteID UUID, evt interfa
 func (db *DB) GetLatestEvents(siteID UUID, max uint) ([]Event, error) {
 
 	var evts []Event
-	err := db.conn.Select(&evts, "SELECT * FROM events WHERE site_id = $1 ORDER BY time DESC LIMIT $2", siteID, max)
+	err := db.conn.Get(&evts, "SELECT * FROM events WHERE site_id = $1 ORDER BY time DESC LIMIT $2", siteID, max)
 	if err != nil {
 		return nil, err
 	}
