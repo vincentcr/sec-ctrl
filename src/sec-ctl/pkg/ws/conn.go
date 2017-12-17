@@ -32,14 +32,14 @@ type Conn struct {
 func Dial(url string, token string) (*Conn, error) {
 	var dialer *websocket.Dialer
 	authVal := fmt.Sprintf("Bearer %v", token)
-	authHead := http.Header{"Authorisation": []string{authVal}}
+	authHead := http.Header{"authorization": []string{authVal}}
 
-	conn, _, err := dialer.Dial(url, authHead)
+	ws, _, err := dialer.Dial(url, authHead)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Conn{ws: conn}, nil
+	return &Conn{ws: ws}, nil
 }
 
 // UpgradeRequest upgrades an http request connection to a websocket connection
@@ -49,23 +49,28 @@ func UpgradeRequest(w http.ResponseWriter, r *http.Request) (*Conn, error) {
 		WriteBufferSize: 1024,
 	}
 
-	conn, err := wsupgrader.Upgrade(w, r, nil)
+	ws, err := wsupgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Conn{conn}, nil
+	return &Conn{ws: ws}, nil
 }
 
-type ControlMessageCode byte
+// ControlMessage is the type used for sending control messages
 type ControlMessage struct {
 	Code ControlMessageCode
 }
 
+// ControlMessageCode is the code type for control messages
+type ControlMessageCode byte
+
 const (
+	// CtrlGetState indicates a request to get the latest state from the client
 	CtrlGetState ControlMessageCode = 1
 )
 
+// Write encodes the supplied data object and sends it through the websocket
 func (conn *Conn) Write(data interface{}) error {
 	w, err := conn.ws.NextWriter(websocket.BinaryMessage)
 	if err != nil {
@@ -81,6 +86,7 @@ func (conn *Conn) Write(data interface{}) error {
 	return w.Close()
 }
 
+// Reads receives messages from the websocket and decodes them.
 func (conn *Conn) Read() (interface{}, error) {
 
 	_, r, err := conn.ws.NextReader()
