@@ -24,27 +24,32 @@ import (
 
 const envKeyPrefix = "SecCtl."
 
-type config interface {
-	AppName() string
-}
-
 // LoadConfig loads the supplied configuration object from defaults and environment variables
-func LoadConfig(cfg, defaults config) error {
-
-	if err := loadConfigFromDefaults(cfg, defaults); err != nil {
-		return err
+func LoadConfig(appName string, srcs ...interface{}) (interface{}, error) {
+	if len(srcs) == 0 {
+		panic("need at least one source config")
 	}
 
-	if err := loadConfigFromEnv(cfg); err != nil {
-		return err
+	pCfg := reflect.New(reflect.TypeOf(srcs[0])).Interface()
+
+	for _, src := range srcs {
+		if err := mergeConfig(pCfg, src); err != nil {
+			return nil, err
+		}
 	}
+
+	if err := loadConfigFromEnv(appName, pCfg); err != nil {
+		return nil, err
+	}
+
+	cfg := reflect.ValueOf(pCfg).Elem().Interface()
 
 	dumpConfig(os.Stdout, cfg)
 
-	return nil
+	return cfg, nil
 }
 
-func dumpConfig(w io.Writer, cfg config) {
+func dumpConfig(w io.Writer, cfg interface{}) {
 
 	w.Write([]byte("Loaded config:\n  "))
 
@@ -57,9 +62,9 @@ func dumpConfig(w io.Writer, cfg config) {
 	w.Write([]byte("\n"))
 }
 
-func loadConfigFromDefaults(cfg, defaults config) error {
+func mergeConfig(dst, src interface{}) error {
 
-	if err := deepCopy(cfg, defaults); err != nil {
+	if err := deepCopy(dst, src); err != nil {
 		return err
 	}
 
@@ -80,9 +85,9 @@ func deepCopy(dst, src interface{}) error {
 	return dec.Decode(dst)
 }
 
-func loadConfigFromEnv(cfg config) error {
+func loadConfigFromEnv(appName string, cfg interface{}) error {
 	env := env2map()
-	pfx := envKeyPrefix + cfg.AppName() + "."
+	pfx := envKeyPrefix + appName + "."
 
 	for k, v := range env {
 		if strings.HasPrefix(k, pfx) {

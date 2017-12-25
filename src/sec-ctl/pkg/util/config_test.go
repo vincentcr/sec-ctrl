@@ -10,6 +10,8 @@ import (
 )
 
 const testKeyPfx = "ConfTest"
+const appName1 = "ConfTestSimple"
+const appName2 = "ConfTestComplex"
 
 type confTestSimple struct {
 	I1 int
@@ -19,9 +21,9 @@ type confTestSimple struct {
 	F2 float32
 }
 
-func (cfg *confTestSimple) AppName() string {
-	return testKeyPfx + "Simple"
-}
+// func (cfg *confTestSimple) AppName() string {
+// 	return testKeyPfx + "Simple"
+// }
 
 type confTestComplex struct {
 	I1  int
@@ -34,9 +36,9 @@ type confTestComplex struct {
 	A3  []string
 }
 
-func (cfg *confTestComplex) AppName() string {
-	return testKeyPfx + "Complex"
-}
+// func (cfg *confTestComplex) AppName() string {
+// 	return testKeyPfx + "Complex"
+// }
 
 func mkSimple() confTestSimple {
 	return confTestSimple{I1: 1, S1: "abc", F1: 123.0}
@@ -72,9 +74,11 @@ func clearEnv() {
 func TestLoadConfigDefaultsOnly(t *testing.T) {
 	clearEnv()
 	defaults := mkSimple()
-	cfg := confTestSimple{}
 
-	if err := LoadConfig(&cfg, &defaults); err != nil {
+	i, err := LoadConfig(appName1, defaults)
+	cfg := i.(confTestSimple)
+
+	if err != nil {
 		t.Fatalf("LoadConfig errored out: %v", err)
 	}
 
@@ -84,12 +88,14 @@ func TestLoadConfigDefaultsOnly(t *testing.T) {
 func TestLoadConfigDefaultsWithEnv(t *testing.T) {
 	clearEnv()
 	defaults := mkSimple()
-	cfg := confTestSimple{}
 
 	os.Setenv(envKeyPrefix+"ConfTestSimple.S2", "abc")
 	os.Setenv(envKeyPrefix+"ConfTestSimple.F1", "3.141592")
 
-	if err := LoadConfig(&cfg, &defaults); err != nil {
+	i, err := LoadConfig(appName1, defaults)
+	cfg := i.(confTestSimple)
+
+	if err != nil {
 		t.Fatalf("LoadConfig errored out: %v", err)
 	}
 
@@ -102,13 +108,15 @@ func TestLoadConfigDefaultsWithEnv(t *testing.T) {
 func TestLoadConfigDefaultsWithEnvNestedObject(t *testing.T) {
 	clearEnv()
 	defaults := mkComplex()
-	cfg := confTestComplex{}
 
 	os.Setenv(envKeyPrefix+"ConfTestComplex.I1", "-246")
 	os.Setenv(envKeyPrefix+"ConfTestComplex.ST1.F1", "3.141592")
 	os.Setenv(envKeyPrefix+"ConfTestComplex.ST1.F2", "2.718281")
 
-	if err := LoadConfig(&cfg, &defaults); err != nil {
+	i, err := LoadConfig(appName2, defaults)
+	cfg := i.(confTestComplex)
+
+	if err != nil {
 		t.Fatalf("LoadConfig errored out: %v", err)
 	}
 
@@ -122,11 +130,10 @@ func TestLoadConfigDefaultsWithEnvNestedObject(t *testing.T) {
 func TestLoadConfigErrorsOnInvalidEnvKeyPath(t *testing.T) {
 	clearEnv()
 	defaults := mkSimple()
-	cfg := confTestSimple{}
 
 	os.Setenv(envKeyPrefix+"ConfTestSimple.FOO", "-246")
 
-	if err := LoadConfig(&cfg, &defaults); err == nil {
+	if _, err := LoadConfig(appName1, defaults); err == nil {
 		t.Fatalf("Expected LoadConfig to fail on invalid key")
 	} else if !strings.Contains(err.Error(), "FOO") {
 		t.Fatalf("Expected LoadConfig error to show the key: instead got: %v", err)
@@ -137,7 +144,7 @@ func TestCreateConfigFromDefaults(t *testing.T) {
 	defaults := mkSimple()
 	cfg := confTestSimple{}
 
-	if err := loadConfigFromDefaults(&cfg, &defaults); err != nil {
+	if err := mergeConfig(&cfg, &defaults); err != nil {
 		t.Fatalf("loadConfigFromDefaults errored out: %v", err)
 	}
 

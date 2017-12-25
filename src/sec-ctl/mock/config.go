@@ -1,5 +1,7 @@
 package main
 
+import "sec-ctl/pkg/util"
+
 type config struct {
 	BindHost      string
 	TPIBindPort   uint16
@@ -8,14 +10,15 @@ type config struct {
 	StateFilename string
 }
 
-func (cfg *config) AppName() string {
-	return "Mock"
-}
-
 var defaultConfig = config{
 	BindHost:      "0.0.0.0",
 	TPIBindPort:   4025,
 	RESTBindPort:  9751,
 	Password:      "mock123",
 	StateFilename: "mock-state.json",
+}
+
+func loadConfig() (config, error) {
+	cfg, err := util.LoadConfig("Mock", defaultConfig)
+	return cfg.(config), err
 }
