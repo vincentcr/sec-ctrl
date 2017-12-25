@@ -3,6 +3,8 @@ PKG_DIR = src/sec-ctl
 
 DB_PASSWORD := secctl_dev123
 
+GO_TEST := go test -timeout 60s
+
 .PHONY: all clean db pkg
 
 all: local cloud mock
@@ -27,7 +29,12 @@ test: test-pkg test-cloud
 test-pkg: pkg
 	docker-compose -f docker-compose.test.yml up pkg
 
-test-cloud: cloud
-	docker-compose -f docker-compose.test.yml up -d cloud-db
-	#cd $(PKG_DIR)/cloud/db && go test
-	docker-compose -f docker-compose.test.yml up cloud
+test-db-run:
+	docker-compose up -d test-cloud-db  test-cloud-redis
+
+test-db-rebuild: db
+	docker rm  -f secctl_test-cloud-db_1
+	$(MAKE) test-db-run
+
+test-cloud: test-db-run
+	$(GO_TEST) sec-ctl/cloud/...
