@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"sync"
-	"time"
 	"sec-ctl/cloud/db"
 	"sec-ctl/pkg/sites"
 	"sec-ctl/pkg/ws"
+	"sync"
+	"time"
 )
 
 // type siteRegistry struct {
@@ -70,7 +70,7 @@ func (r *siteRegistry) initRemoteSite(site db.Site, conn *ws.Conn) {
 			logger.Panicf("failed to parse event from json %v: %v", msg.data, err)
 		}
 
-		return r.db.SaveEvent(string(evt.Level), evt.Time, site.ID, evt)
+		return r.db.CreateEvent(site.ID, evt.Time, string(evt.Level), evt)
 	})
 }
 
@@ -81,7 +81,7 @@ func (r *siteRegistry) getSite(user db.User, id db.UUID) (db.Site, error) {
 		return db.Site{}, err
 	}
 
-	if s.OwnerID != user.ID {
+	if !user.ID.Equals(s.OwnerID) {
 		return db.Site{}, fmt.Errorf("Unauthorized")
 	}
 

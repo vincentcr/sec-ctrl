@@ -1,10 +1,10 @@
 package db
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"sec-ctl/cloud/config"
-	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -14,34 +14,44 @@ import (
 
 const bcryptSaltSize = 8
 
-// UUID represents a PostgreSQL uuid
-type UUID string
-
-func (id UUID) String() string {
-	return strings.Replace(string(id), "-", "", -1)
-}
-
+// DB represents a database connection
 type DB struct {
 	conn *sqlx.DB
 }
 
+// User represents a user row
 type User struct {
 	ID    UUID
 	Email string
 }
 
+// Site represents a site row
 type Site struct {
 	ID          UUID
-	OwnerID     UUID `db:"owner_id"`
-	StateShadow string
+	OwnerID     UUID           `db:"owner_id"`
+	StateShadow sql.NullString `db:"state_shadow"`
 }
 
-type Event struct {
-	Level string
-	Time  time.Time
-	Data  string
+// SiteEvent represents a site event row
+type SiteEvent struct {
+	ID     int64
+	SiteID UUID `db:"site_id"`
+	Level  string
+	Time   time.Time
+	Data   string
 }
 
+func (e SiteEvent) DecodeData() (interface{}, error) {
+	var d interface{}
+	err := json.Unmarshal([]byte(e.Data), &d)
+	if err != nil {
+		return nil, err
+	}
+
+	return d, nil
+}
+
+// OpenDB opens a database connection
 func OpenDB(cfg config.Config) (*DB, error) {
 	connStr := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
@@ -63,7 +73,8 @@ func OpenDB(cfg config.Config) (*DB, error) {
 	return db, nil
 }
 
-func (db *DB) CreateUser(email string, password string) (User, string, error) {
+// CreateUser creates a user with supplied email and password
+func (db *DB) CreateUser(email string, password string) (User, error) {
 
 	u := User{
 		Email: email,
@@ -71,33 +82,50 @@ func (db *DB) CreateUser(email string, password string) (User, string, error) {
 
 	tx, err := db.conn.Beginx()
 	if err != nil {
-		return User{}, "", err
+		return User{}, err
 	}
+	defer tx.Rollback()
 
 	r := tx.QueryRow(`
 		INSERT
-			INTO users(id, email, password)
-			VALUES (gen_random_uuid(), $1, crypt($2, gen_salt('bf', $3)))
+			INTO users(email, password)
+			VALUES ($1, crypt($2, gen_salt('bf', $3)))
 			RETURNING id
 	`, email, password, bcryptSaltSize)
 	err = r.Scan(&u.ID)
 	if err != nil {
-		return User{}, "", err
-	}
-
-	tok, err := createAuthToken(tx, u.ID, time.Time{})
-	if err != nil {
-		return User{}, "", err
+		return User{}, err
 	}
 
 	if err = tx.Commit(); err != nil {
-		return User{}, "", err
+		return User{}, err
 	}
 
-	return u, tok, nil
+	return u, nil
 }
 
-func (db *DB) AuthUser(email string, password string) (User, error) {
+// CreateUserToken creates a token for specified user id
+func (db *DB) CreateUserToken(userID UUID) (string, error) {
+	tx, err := db.conn.Beginx()
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+
+	tok, err := createAuthToken(tx, userID, time.Time{})
+	if err != nil {
+		return "", err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return "", err
+	}
+
+	return tok, nil
+}
+
+// AuthUserByPassword returns a user record if the password is correct
+func (db *DB) AuthUserByPassword(email string, password string) (User, error) {
 
 	var u User
 	err := db.conn.Get(&u, "SELECT id, email FROM users where email = $1 AND password = crypt($2, password)", email, password)
@@ -108,14 +136,14 @@ func (db *DB) AuthUser(email string, password string) (User, error) {
 	return u, nil
 }
 
+// AuthUserByToken returns a user record if the token is valid
 func (db *DB) AuthUserByToken(token string) (User, error) {
 	var u User
 	err := db.conn.Get(&u, `
-			SELECT users.*
+			SELECT users.id, users.email
 				FROM users
-					JOIN auth_tokens ON auth_tokens.rec_id = users.id
-				WHERE token = $1
-		`)
+					JOIN auth_tokens ON validate_auth_token(auth_tokens, users.id, $1)
+		`, token)
 
 	if err != nil {
 		return User{}, err
@@ -124,10 +152,75 @@ func (db *DB) AuthUserByToken(token string) (User, error) {
 	return u, nil
 }
 
-func (db *DB) AuthSiteByToken(token string) (Site, error) {
+// CreateSite creates a site
+func (db *DB) CreateSite() (Site, error) {
 
+	tx, err := db.conn.Beginx()
+	if err != nil {
+		return Site{}, err
+	}
+	defer tx.Rollback()
+
+	s := Site{}
+
+	err = tx.QueryRow(`
+		INSERT
+			INTO sites DEFAULT VALUES
+			RETURNING id
+	`).Scan(&s.ID)
+
+	if err != nil {
+		return Site{}, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return Site{}, err
+	}
+
+	return s, nil
+}
+
+// CreateSiteToken creates a token for the specified site id. the token doesn't expire
+func (db *DB) CreateSiteToken(siteID UUID) (string, error) {
+	return db.CreateSiteTokenWithExpiry(siteID, time.Time{})
+}
+
+// CreateSiteTokenWithExpiry creates a token for the specified site id with the specifed expiry
+func (db *DB) CreateSiteTokenWithExpiry(siteID UUID, expiry time.Time) (string, error) {
+	tx, err := db.conn.Beginx()
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+
+	tok, err := createAuthToken(tx, siteID, expiry)
+	if err != nil {
+		return "", err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return "", err
+	}
+
+	return tok, nil
+}
+
+// FetchSiteByID fetches the site with the specified id
+func (db *DB) FetchSiteByID(siteID UUID) (Site, error) {
 	var s Site
-	err := db.conn.Select(&s, "SELECT * FROM users where token = $1 AND owner_id IS NOT NULL", token)
+	err := db.conn.Get(&s, `SELECT * FROM sites WHERE id = $1`, siteID)
+	return s, err
+}
+
+// AuthSiteByToken returns the site whose token matches the specified value.
+func (db *DB) AuthSiteByToken(token string) (Site, error) {
+	var s Site
+	err := db.conn.Get(&s, `
+			SELECT sites.*
+				FROM sites
+					JOIN auth_tokens ON validate_auth_token(auth_tokens, sites.id, $1)
+		`, token)
+
 	if err != nil {
 		return Site{}, err
 	}
@@ -135,20 +228,23 @@ func (db *DB) AuthSiteByToken(token string) (Site, error) {
 	return s, nil
 }
 
+// ClaimSite sets the site's owner to the supplied user id.
+// The operation only succeeds if the site is not already owned
+// and the supplied claim token is valid.
 func (db *DB) ClaimSite(user User, siteID UUID, claimToken string) error {
 	tx, err := db.conn.Beginx()
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback()
 
 	r, err := tx.Exec(`
 		UPDATE sites
 			SET owner_id = $1
 			FROM auth_tokens
-			WHERE users.id = $2
+			WHERE sites.id = $2
 				AND owner_id IS NULL
-				AND auth_tokens.rec_id = sites.id
-				AND auth_tokens.token = $3
+				AND validate_auth_token(auth_tokens, sites.id, $3)
 	`, user.ID, siteID, claimToken)
 	if err != nil {
 		return err
@@ -175,73 +271,46 @@ func (db *DB) ClaimSite(user User, siteID UUID, claimToken string) error {
 	return err
 }
 
-func (db *DB) FetchSiteByID(id UUID) (Site, error) {
-	s := Site{}
-	err := db.conn.Get(&s, `SELECT * FROM sites WHERE id = $1`, id)
-	return s, err
-}
-
-func (db *DB) CreateSite() (Site, string, string, error) {
-
-	tx, err := db.conn.Beginx()
-	if err != nil {
-		return Site{}, "", "", err
-	}
-
-	s := Site{}
-
-	err = tx.QueryRow(`
-		INSERT
-			INTO sites(id)
-			VALUES (gen_random_uuid())
-			RETURNING normalize_uuid(id)
-	`).Scan(&s.ID)
-
-	if err != nil {
-		return Site{}, "", "", err
-	}
-
-	tok, err := createAuthToken(tx, s.ID, time.Time{})
-	if err != nil {
-		return Site{}, "", "", err
-	}
-
-	tmpTok, err := createAuthToken(tx, s.ID, time.Now().Add(7*24*time.Hour))
-	if err != nil {
-		return Site{}, "", "", err
-	}
-
-	if err = tx.Commit(); err != nil {
-		return Site{}, "", "", err
-	}
-
-	return s, tok, tmpTok, nil
-}
-
-func (db *DB) SaveEvent(level string, tstamp time.Time, siteID UUID, evt interface{}) error {
+// CreateEvent creates an event with the specified data
+func (db *DB) CreateEvent(siteID UUID, tstamp time.Time, level string, evt interface{}) (SiteEvent, error) {
 
 	data, err := json.Marshal(evt)
 	if err != nil {
 		panic(fmt.Errorf("failed to jsonify event %v: %v", evt, err))
 	}
 
-	_, err = db.conn.Exec(`
-		INSERT INTO events(level, time, site_id, data)
+	var e SiteEvent
+	err = db.conn.Get(&e, `
+		INSERT INTO site_events(level, time, site_id, data)
 		VALUES ($1, $2, $3, $4)
-	`, level, tstamp, siteID, data)
-	return err
+		RETURNING *
+	`, level, tstamp.UTC(), siteID, data)
+
+	return e, err
 }
 
-func (db *DB) GetLatestEvents(siteID UUID, max uint) ([]Event, error) {
+// GetSiteEvents returns the last site events by time
+func (db *DB) GetSiteEvents(siteID UUID, offsetID int64, max uint) ([]SiteEvent, error) {
 
-	var evts []Event
-	err := db.conn.Get(&evts, "SELECT * FROM events WHERE site_id = $1 ORDER BY time DESC LIMIT $2", siteID, max)
+	stmt := `
+	SELECT * FROM site_events
+		WHERE site_id = $1 AND ($2 = 0 OR id < $2)
+		ORDER BY id DESC
+	`
+	args := []interface{}{siteID, offsetID}
+
+	if max > 0 {
+		stmt += " LIMIT $3"
+		args = append(args, max)
+	}
+
+	var evts []SiteEvent
+	err := db.conn.Select(&evts, stmt, args...)
 	if err != nil {
 		return nil, err
 	}
 
 	return evts, nil
-
 }
 
 func createAuthToken(tx *sqlx.Tx, recID UUID, expiresAt time.Time) (string, error) {
@@ -256,9 +325,9 @@ func createAuthToken(tx *sqlx.Tx, recID UUID, expiresAt time.Time) (string, erro
 	var tok string
 	r := tx.QueryRow(`
 		INSERT INTO
-			auth_tokens(rec_id, token, expires_at)
-			VALUES ($1, gen_random_uuid(), $2)
-			RETURNING normalize_uuid(token)
+			auth_tokens(rec_id, expires_at)
+			VALUES ($1, $2)
+			RETURNING token
 	`, recID, expiresAtOrNull)
 
 	err := r.Scan(&tok)

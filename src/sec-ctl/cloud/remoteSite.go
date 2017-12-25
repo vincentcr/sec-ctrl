@@ -91,7 +91,7 @@ func (c *remoteSite) send(obj interface{}) {
 
 func (c *remoteSite) handleConnErr(err error) {
 	logger.Println("client disconnected:", err)
-	c.queue.publish(queueNameSiteRemoved, []byte(c.id))
+	c.queue.publish(queueNameSiteRemoved, []byte(c.id.String()))
 }
 
 func (c *remoteSite) Exec(cmd sites.UserCommand) error {

@@ -3,10 +3,11 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"strings"
 	"sec-ctl/cloud/db"
 	"sec-ctl/pkg/sites"
 	"sec-ctl/pkg/ws"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -56,7 +57,13 @@ func (rest rest) setup() {
 			c.JSON(400, &gin.H{"error": err.Error()})
 			return
 		}
-		user, tok, err := rest.db.CreateUser(userForm.Email, userForm.Password)
+		user, err := rest.db.CreateUser(userForm.Email, userForm.Password)
+		if err != nil {
+			c.JSON(500, &gin.H{"error": err.Error()})
+			return
+		}
+
+		tok, err := rest.db.CreateUserToken(user.ID)
 		if err != nil {
 			c.JSON(500, &gin.H{"error": err.Error()})
 			return
@@ -70,13 +77,25 @@ func (rest rest) setup() {
 
 	rest.gin.POST("/sites", func(c *gin.Context) {
 
-		site, tok, claimTok, err := rest.db.CreateSite()
+		site, err := rest.db.CreateSite()
 		if err != nil {
 			c.JSON(500, &gin.H{"error": err.Error()})
 			return
 		}
 
-		setupURL := fmt.Sprintf("/sites/%s/firstTime?t=%s", site.ID, claimTok)
+		tok, err := rest.db.CreateSiteToken(site.ID)
+		if err != nil {
+			c.JSON(500, &gin.H{"error": err.Error()})
+			return
+		}
+
+		claimTok, err := rest.db.CreateSiteTokenWithExpiry(site.ID, time.Now().Add(7*24*time.Hour))
+		if err != nil {
+			c.JSON(500, &gin.H{"error": err.Error()})
+			return
+		}
+
+		setupURL := fmt.Sprintf("/sites/%s/firstTime?t=%s", site.ID.String(), claimTok)
 
 		c.JSON(200, &gin.H{
 			"SiteID":   site.ID,
