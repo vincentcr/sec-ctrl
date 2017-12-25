@@ -2,7 +2,9 @@ package db
 
 import (
 	"database/sql"
+	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"sec-ctl/cloud/config"
 	"testing"
 	"time"
@@ -13,6 +15,7 @@ import (
 var db *DB
 
 func init() {
+	rand.Seed(time.Now().UnixNano())
 	cfg, err := config.LoadTest()
 	if err != nil {
 		panic(err)
@@ -22,57 +25,84 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	mustWipeDB()
 }
 
 func TestCreateUser(t *testing.T) {
-	mustWipeDB()
 
-	u, err := db.CreateUser("joe@gmail.com", "pass")
+	email := randomEmail()
+	pass := randomPassword()
+	u, err := db.CreateUser(email, pass)
 
 	assert.Nil(t, err)
-	assert.Equal(t, "joe@gmail.com", u.Email)
+	assert.Equal(t, email, u.Email)
 	assertUUID(t, u.ID)
 
 	var n int
 	err = db.conn.QueryRowx(
 		`SELECT COUNT(*) FROM users WHERE id = $1 AND email = $2 AND PASSWORD != $3`,
-		u.ID, u.Email, "pass",
+		u.ID, email, pass,
 	).Scan(&n)
 	if err != nil {
 		t.Fatalf("error verifying row count: %v", err)
 	}
 
 	assert.Equal(t, 1, n)
+}
 
+func randomEmail() string {
+	return fmt.Sprintf("u_%v_%v@mail.inv", rand.Int(), time.Now().Unix())
+}
+
+func randomPassword() string {
+	return randomAlphanum(uint(8 + rand.Intn(16)))
+}
+
+func randomAlphanum(n uint) string {
+	data := make([]byte, n)
+	_, err := rand.Read(data)
+	if err != nil {
+		panic(err)
+	}
+	enc := make([]byte, hex.EncodedLen(len(data)))
+	hex.Encode(enc, data)
+	return string(enc)
 }
 
 func TestAuthUserByPasswordGoodPassword(t *testing.T) {
-	mustWipeDB()
 
-	u, err := db.CreateUser("joe@gmail.com", "pass")
+	email := randomEmail()
+	pass := randomPassword()
+
+	email2 := randomEmail()
+	pass2 := randomPassword()
+
+	u, err := db.CreateUser(email, pass)
 	assert.Nil(t, err)
 
-	u2, err := db.CreateUser("joe2@gmail.com", "pass")
+	u2, err := db.CreateUser(email2, pass2)
 	assert.Nil(t, err)
 
-	u3, err := db.AuthUserByPassword("joe@gmail.com", "pass")
+	u3, err := db.AuthUserByPassword(email, pass)
 	assert.Nil(t, err)
 
 	assert.Equal(t, u, u3)
 
-	u4, err := db.AuthUserByPassword("joe2@gmail.com", "pass")
+	u4, err := db.AuthUserByPassword(email2, pass2)
 	assert.Nil(t, err)
 
 	assert.Equal(t, u2, u4)
 }
 
 func TestAuthUserByPasswordBadPassword(t *testing.T) {
-	mustWipeDB()
 
-	_, err := db.CreateUser("joe@gmail.com", "pass")
+	email := randomEmail()
+
+	_, err := db.CreateUser(email, randomPassword())
 	assert.Nil(t, err)
 
-	u2, err := db.AuthUserByPassword("joe@gmail.com", "ssap")
+	u2, err := db.AuthUserByPassword(email, randomPassword())
 	assert.Equal(t, sql.ErrNoRows, err)
 
 	assert.Empty(t, u2.ID)
@@ -80,21 +110,21 @@ func TestAuthUserByPasswordBadPassword(t *testing.T) {
 }
 
 func TestAuthUserByPasswordBadEmail(t *testing.T) {
-	mustWipeDB()
 
-	_, err := db.CreateUser("joe@gmail.com", "pass")
+	pass := randomPassword()
+
+	_, err := db.CreateUser(randomEmail(), pass)
 	assert.Nil(t, err)
 
-	u2, err := db.AuthUserByPassword("joe2@gmail.com", "pass")
+	u2, err := db.AuthUserByPassword(randomEmail(), pass)
 	assert.Equal(t, sql.ErrNoRows, err)
 	assert.Empty(t, u2.ID)
 	assert.Empty(t, u2.Email)
 }
 
 func TestCreateUserToken(t *testing.T) {
-	mustWipeDB()
 
-	u, err := db.CreateUser("joe@gmail.com", "pass")
+	u, err := db.CreateUser(randomEmail(), randomPassword())
 	assert.Nil(t, err)
 
 	tok, err := db.CreateUserToken(u.ID)
@@ -115,9 +145,11 @@ func TestCreateUserToken(t *testing.T) {
 }
 
 func TestAuthUserByToken(t *testing.T) {
-	mustWipeDB()
 
-	u, err := db.CreateUser("joe@gmail.com", "pass")
+	email := randomEmail()
+	pass := randomPassword()
+
+	u, err := db.CreateUser(email, pass)
 	assert.Nil(t, err)
 
 	tok, err := db.CreateUserToken(u.ID)
@@ -130,7 +162,6 @@ func TestAuthUserByToken(t *testing.T) {
 }
 
 func TestCreateSite(t *testing.T) {
-	mustWipeDB()
 
 	s, err := db.CreateSite()
 	assert.Nil(t, err)
@@ -152,7 +183,6 @@ func TestCreateSite(t *testing.T) {
 }
 
 func TestFetchSiteByID(t *testing.T) {
-	mustWipeDB()
 
 	s1, err := db.CreateSite()
 	assert.Nil(t, err)
@@ -166,7 +196,6 @@ func TestFetchSiteByID(t *testing.T) {
 }
 
 func TestCreateSiteToken(t *testing.T) {
-	mustWipeDB()
 
 	s, err := db.CreateSite()
 	assert.Nil(t, err)
@@ -189,7 +218,6 @@ func TestCreateSiteToken(t *testing.T) {
 }
 
 func TestCreateSiteTokenWithExpiry(t *testing.T) {
-	mustWipeDB()
 
 	s, err := db.CreateSite()
 	assert.Nil(t, err)
@@ -214,7 +242,6 @@ func TestCreateSiteTokenWithExpiry(t *testing.T) {
 }
 
 func TestAuthSiteByToken(t *testing.T) {
-	mustWipeDB()
 
 	s1, err := db.CreateSite()
 	assert.Nil(t, err)
@@ -240,7 +267,6 @@ func TestAuthSiteByToken(t *testing.T) {
 }
 
 func TestClaimSite(t *testing.T) {
-	mustWipeDB()
 
 	s1, err := db.CreateSite()
 	assert.Nil(t, err)
@@ -248,7 +274,7 @@ func TestClaimSite(t *testing.T) {
 	s2, err := db.CreateSite()
 	assert.Nil(t, err)
 
-	u1, err := db.CreateUser("foo@bar.com", "abcdef")
+	u1, err := db.CreateUser(randomEmail(), randomPassword())
 	assert.Nil(t, err)
 
 	tok, err := db.CreateSiteToken(s1.ID)
@@ -267,12 +293,11 @@ func TestClaimSite(t *testing.T) {
 }
 
 func TestClaimSiteOnlyOnce(t *testing.T) {
-	mustWipeDB()
 
 	s1, err := db.CreateSite()
 	assert.Nil(t, err)
 
-	u1, err := db.CreateUser("foo@bar.com", "abcdef")
+	u1, err := db.CreateUser(randomEmail(), randomPassword())
 	assert.Nil(t, err)
 
 	tok, err := db.CreateSiteToken(s1.ID)
@@ -289,12 +314,11 @@ func TestClaimSiteOnlyOnce(t *testing.T) {
 }
 
 func TestClaimSiteInvalidToken(t *testing.T) {
-	mustWipeDB()
 
 	s1, err := db.CreateSite()
 	assert.Nil(t, err)
 
-	u1, err := db.CreateUser("foo@bar.com", "abcdef")
+	u1, err := db.CreateUser(randomEmail(), randomPassword())
 	assert.Nil(t, err)
 
 	s2, err := db.CreateSite()
@@ -311,7 +335,6 @@ func TestClaimSiteInvalidToken(t *testing.T) {
 }
 
 func TestCreateEvent(t *testing.T) {
-	mustWipeDB()
 
 	s1, err := db.CreateSite()
 	assert.Nil(t, err)
@@ -430,35 +453,3 @@ func assertUUID(t *testing.T, v interface{}) {
 
 	assert.Regexp(t, "^[a-z0-9]{32}$", s)
 }
-
-// func TestPerfUuid(t *testing.T) {
-
-// 	n := 10000
-
-// 	timeTrack := func(label string, work func()) {
-// 		start := time.Now()
-// 		for i := 0; i < n; i++ {
-// 			work()
-// 		}
-// 		elapsed := time.Duration(int64(time.Since(start)) / int64(n))
-// 		fmt.Printf("%v: %v\n", label, elapsed)
-// 	}
-
-// 	timeTrack("gen_random_uuid", func() {
-// 		db.conn.Exec("SELECT gen_random_uuid()")
-// 	})
-
-// 	timeTrack("gen_random_bytes", func() {
-// 		db.conn.Exec("SELECT encode(gen_random_bytes(16), 'hex');")
-// 	})
-
-// 	timeTrack("uuid_generate_v4", func() {
-// 		db.conn.Exec("SELECT uuid_generate_v4()")
-// 	})
-
-// 	timeTrack("uuid_generate_v1", func() {
-// 		db.conn.Exec("SELECT uuid_generate_v1()")
-// 	})
-
-// 	t.Fail()
-// }
