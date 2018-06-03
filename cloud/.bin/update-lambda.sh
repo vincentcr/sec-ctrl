@@ -1,7 +1,22 @@
 #!/bin/sh
 
+set -e
+
 ARCHIVE=$( $(dirname $0)/build-lambda.sh )
 
-echo ARCHIVE=$ARCHIVE
+if [ -z "$LAMBDA_NAME" ] ; then
+  echo "LAMBDA_NAME env var required"
+  exit 1
+fi
 
-aws --profile polymatix lambda update-function-code --function-name test1 --zip-file fileb://$ARCHIVE
+if [ -z "$AWS_PROFILE" ] ; then
+  echo "AWS_PROFILE env var required"
+  exit 1
+fi
+
+aws --profile $AWS_PROFILE \
+  lambda update-function-code \
+  --function-name $LAMBDA_NAME \
+  --zip-file fileb://$ARCHIVE
+
+rm $ARCHIVE

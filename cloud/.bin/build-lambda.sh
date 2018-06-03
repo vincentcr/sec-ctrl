@@ -32,4 +32,6 @@ npm install --silent --production >&2
 # zip everything into an archive
 zip -q -r $PKG .  >&2
 
+rm -rf $TMP_DIR
+
 echo $PKG
