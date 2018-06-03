@@ -4,6 +4,8 @@
   "description": "sec-ctrl cloud message processor",
   "main": "lib/index.js",
   "scripts": {
+    "build": "tsc",
+    "deploy": "AWS_PROFILE=polymatix LAMBDA_NAME=test1 ../.bin/update-lambda.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Vincent Côté-Roy",
