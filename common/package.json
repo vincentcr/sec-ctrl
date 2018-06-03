@@ -6,7 +6,6 @@
   "typings": "dist/index",
   "scripts": {
     "build": "tsc",
-    "install": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
