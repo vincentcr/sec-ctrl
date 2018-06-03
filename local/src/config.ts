@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-const CONFIG_FILE = "../config.json";
+const CONFIG_FILE = "./config.json";
 
 export type LocalConfig = {
   port: number;

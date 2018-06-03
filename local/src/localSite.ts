@@ -36,7 +36,7 @@ export class LocalSite {
       if (this.loggedIn) {
         this.sendMessage(new ClientMessage(ClientCode.Poll));
       }
-    }, KEEP_ALIVE_INTERVAL_MS);
+    }, this.keepAliveIntervalMs);
   }
 
   onMessage(listener: (msg: ServerMessage) => void) {
