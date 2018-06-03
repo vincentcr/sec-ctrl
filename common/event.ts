@@ -3,16 +3,16 @@ import * as uuid from "uuid";
 import { ServerMessage } from "./message";
 import { ServerCode } from "./codes";
 import { errorCodeDescriptions } from "./errorCode";
-import { SystemTroubleStatus } from "./systemTroubleStatus";
-import { KeypadLedState, PartitionStatus } from "./partition";
+import { PartitionStatus, KeypadLedState } from "./partition";
 import { ZoneStatus } from "./zone";
 import { decodeIntCode, encodeIntCode, decodeHexByte } from "./encodings";
+import { SystemTroubleStatus } from "./systemTroubleStatus";
 
 export const enum EventType {
   Info = "Info",
   SystemError = "SystemError",
   Trouble = "Trouble",
-  TroubleStatus = "TroubleStatus",
+  SystemTroubleStatus = "SystemTroubleStatus",
   Alarm = "Alarm",
   ZoneChange = "ZoneChange",
   PartitionChange = "PartitionChange",
@@ -39,9 +39,9 @@ export interface TroubleEvent extends BaseEvent {
   readonly code: string;
 }
 
-export interface TroubleStatusEvent extends BaseEvent {
-  readonly type: EventType.TroubleStatus;
-  readonly status: SystemTroubleStatus;
+export interface SystemTroubleStatusEvent extends BaseEvent {
+  readonly type: EventType.SystemTroubleStatus;
+  readonly status: string[];
 }
 
 export interface AlarmEvent extends BaseEvent {
@@ -68,7 +68,7 @@ export interface PartitionStatusChangeEvent extends PartitionChangeBaseEvent {
 export interface PartitionKeypadLedStateChangeEvent
   extends PartitionChangeBaseEvent {
   readonly changeType: PartitionChangeEventType.KeypadLed;
-  readonly keypadState: KeypadLedState;
+  readonly keypadState: string[];
   readonly flash: boolean;
 }
 
@@ -101,7 +101,7 @@ export type Event =
   | InfoEvent
   | SystemErrorEvent
   | TroubleEvent
-  | TroubleStatusEvent
+  | SystemTroubleStatusEvent
   | AlarmEvent
   | PartitionChangeEvent
   | ZoneChangeEvent
@@ -238,12 +238,14 @@ function buildAlarmEvent(msg: ServerMessage): AlarmEvent {
   };
 }
 
-function buildTroubleStatusEvent(msg: ServerMessage): TroubleStatusEvent {
-  const status = <SystemTroubleStatus>decodeHexByte(msg.data);
+function buildTroubleStatusEvent(msg: ServerMessage): SystemTroubleStatusEvent {
+  const flags = decodeHexByte(msg.data);
+  const status = SystemTroubleStatus.toStrings(flags);
+
   return {
     date: new Date(),
     id: uuid.v1(),
-    type: EventType.TroubleStatus,
+    type: EventType.SystemTroubleStatus,
     status,
   };
 }
@@ -269,7 +271,8 @@ function buildPartitionKeypadLedStateChangeEvent(
   flash: boolean,
 ): PartitionKeypadLedStateChangeEvent {
   const partitionID = "1";
-  const keypadState = <KeypadLedState>decodeHexByte(msg.data);
+  const flags = decodeHexByte(msg.data);
+  const keypadState = KeypadLedState.toStrings(flags);
 
   return {
     date: new Date(),

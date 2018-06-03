@@ -1,8 +1,3 @@
-export interface Zone {
-  id: string;
-  status: ZoneStatus;
-}
-
 export const enum ZoneStatus {
   Alarm = "Alarm",
   AlarmRestore = "Alarm Restore",
@@ -12,4 +7,9 @@ export const enum ZoneStatus {
   FaultRestore = "Fault Restore",
   Open = "Open",
   Restore = "Restore",
+}
+
+export interface Zone {
+  id: string;
+  status: ZoneStatus;
 }

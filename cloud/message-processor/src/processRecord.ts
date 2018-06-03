@@ -6,18 +6,19 @@ import {
   PartitionChangeEvent,
   PartitionChangeEventType,
   ZoneChangeEvent,
+  SystemTroubleStatusEvent,
 } from "../../../common/event";
 import { Partition } from "../../../common/partition";
 import { Zone } from "../../../common/zone";
-import { SystemTroubleStatus } from "../../../common/systemTroubleStatus";
 
-const docClient = new AWS.DynamoDB.DocumentClient();
+const dynamodbClient = new AWS.DynamoDB.DocumentClient();
 
-// interface Site {
-//   partitions: { [id: string]: Partition };
-//   zones: { [id: string]: Zone };
-//   troubleStatus: SystemTroubleStatus;
-// }
+interface Site {
+  readonly thingID: string;
+  readonly partitions: { [id: string]: Partition };
+  readonly zones: { [id: string]: Zone };
+  readonly systemTroubleStatus: string[];
+}
 
 export interface StoredEvent {
   data: {
@@ -28,46 +29,25 @@ export interface StoredEvent {
   eventID: string;
 }
 
-export function processRecord(thingID: string, evt: Event) {
+export async function processRecord(thingID: string, evt: Event) {
   switch (evt.type) {
     case EventType.PartitionChange:
-      return updatePartition(thingID, evt);
+      await updatePartition(thingID, evt);
+      break;
     case EventType.ZoneChange:
-      return updateZone(thingID, evt);
-    // case EventType.Alarm:
-    //   await processAlarm(evt);
+      await updateZone(thingID, evt);
+      break;
+    case EventType.SystemTroubleStatus:
+      await updateSystemTroubleStatus(thingID, evt);
+      break;
   }
 }
-
-// export async function processPayload(params: {
-//   thingID: string;
-//   payload: any;
-// }) {
-//   const { thingID, payload } = params;
-//   const evt = fromJson(payload);
-//   console.log("processPayload: ", payload, "=>", evt);
-
-//   await Promise.all([processEvent(thingID, evt), logEvent(evt)]);
-// }
-
-// async function processEvent(thingID: string, evt: Event) {
-//   switch (evt.type) {
-//     case EventType.PartitionChange:
-//       await updatePartition(thingID, evt);
-//       break;
-//     // case EventType.ZoneChange:
-//     //   await updateZone(evt);
-//     //   break;
-//     // case EventType.Alarm:
-//     //   await processAlarm(evt);
-//   }
-// }
 
 async function updatePartition(thingID: string, evt: PartitionChangeEvent) {
   const { partitionID } = evt;
 
   try {
-    await docClient
+    await dynamodbClient
       .update({
         TableName: "secCtrl.sites",
         Key: { thingID },
@@ -88,7 +68,7 @@ async function updatePartition(thingID: string, evt: PartitionChangeEvent) {
   }
 
   try {
-    await docClient
+    await dynamodbClient
       .update({
         TableName: "secCtrl.sites",
         Key: { thingID },
@@ -139,7 +119,7 @@ async function updatePartition(thingID: string, evt: PartitionChangeEvent) {
       .map(key => `#parts.#part.#${key}=:${key}`)
       .join(",");
 
-  await docClient
+  await dynamodbClient
     .update({
       TableName: "secCtrl.sites",
       Key: { thingID },
@@ -163,7 +143,7 @@ async function updateZone(
   console.log("updateZone:", thingID, zone);
 
   try {
-    await docClient
+    await dynamodbClient
       .update({
         TableName: "secCtrl.sites",
         Key: { thingID },
@@ -180,7 +160,7 @@ async function updateZone(
     }
   }
 
-  await docClient
+  await dynamodbClient
     .update({
       TableName: "secCtrl.sites",
       Key: { thingID },
@@ -188,6 +168,24 @@ async function updateZone(
       ExpressionAttributeNames: { "#zoneID": zoneID },
       ExpressionAttributeValues: {
         ":zone": zone,
+      },
+    })
+    .promise();
+}
+
+async function updateSystemTroubleStatus(
+  thingID: string,
+  evt: SystemTroubleStatusEvent,
+) {
+  const { status } = evt;
+
+  await dynamodbClient
+    .update({
+      TableName: "secCtrl.sites",
+      Key: { thingID },
+      UpdateExpression: `SET systemTroubleStatus = :status`,
+      ExpressionAttributeValues: {
+        ":status": status,
       },
     })
     .promise();

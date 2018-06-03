@@ -1,26 +1,26 @@
-export type Flag<TFlagType extends number> = { value: TFlagType; desc: string };
-export type FlagsDefinition<TFlagType extends number> = {
-  [desc: string]: TFlagType;
+export type Flag = { value: number; desc: string };
+export type FlagsDefinition = {
+  [desc: string]: number;
 };
 
-export class Flags<TFlagType extends number> {
-  readonly definitions: FlagsDefinition<TFlagType>;
-  constructor(definitions: FlagsDefinition<TFlagType>) {
+export class Flags {
+  readonly definitions: FlagsDefinition;
+  constructor(definitions: FlagsDefinition) {
     this.definitions = definitions;
   }
 
-  toString(flagBits: TFlagType) {
+  toStrings(flagBits: number) {
     const flags = this.decompose(flagBits);
-    return flags.map(({ desc }) => desc).join(", ");
+    return flags.map(({ desc }) => desc);
   }
 
-  private decompose(flagBits: TFlagType): Flag<TFlagType>[] {
+  private decompose(flagBits: number): Flag[] {
     let remainder = flagBits;
     const flags = [];
 
     for (const [desc, mask] of Object.entries(this.definitions)) {
       if ((flagBits & mask) != 0) {
-        remainder = (remainder & ~mask) as TFlagType;
+        remainder = remainder & ~mask;
         flags.push({ value: mask, desc });
       }
     }

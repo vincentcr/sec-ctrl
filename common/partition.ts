@@ -9,9 +9,7 @@ export const enum PartitionStatus {
   Busy = "Busy",
 }
 
-export type KeypadLedState = number;
-
-export const KeypadLedStateFlags = new Flags<KeypadLedState>({
+export const KeypadLedState = new Flags({
   Ready: 1 << 1,
   Armed: 1 << 2,
   Memory: 1 << 3,
@@ -26,6 +24,6 @@ export interface Partition {
   id: string;
   status: PartitionStatus;
   troubleStateLed: boolean;
-  keypadLedFlashState: KeypadLedState;
-  keypadLedState: KeypadLedState;
+  keypadLedFlashState: string[];
+  keypadLedState: string[];
 }

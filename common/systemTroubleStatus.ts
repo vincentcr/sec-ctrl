@@ -1,8 +1,6 @@
 import { Flags } from "./flags";
 
-export type SystemTroubleStatus = number;
-
-export const SystemTroubleStatusFlags = new Flags<SystemTroubleStatus>({
+export const SystemTroubleStatus = new Flags({
   "Service Required": 1 << 1,
   "AC Power Lost": 1 << 2,
   "Telephone Line Fault": 1 << 3,
