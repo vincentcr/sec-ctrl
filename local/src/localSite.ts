@@ -4,27 +4,22 @@ import { ServerCode, ClientCode } from "../../common/codes";
 import { ServerMessage, ClientMessage } from "../../common/message";
 import { LoginRes, getLoginRes } from "./loginRes";
 import { LocalSiteConnector } from "./localSiteConnector";
-
-const KEEP_ALIVE_INTERVAL_MS = 1000 * 30;
+import { LocalConfig } from "./config";
 
 export class LocalSite {
   private readonly password: string;
   private readonly connector: LocalSiteConnector;
   private readonly emitter = new EventEmitter();
   private readonly statusRefreshIntervalMs: number;
+  private readonly keepAliveIntervalMs: number;
   private loggedIn: boolean = false;
 
-  constructor(params: {
-    port: number;
-    hostname: string;
-    password: string;
-    statusRefreshIntervalMs: number;
-  }) {
-    const { password, port, hostname, statusRefreshIntervalMs } = params;
-    this.password = password;
+  constructor(config: LocalConfig) {
+    this.password = config.password;
     this.emitter = new EventEmitter();
-    this.connector = new LocalSiteConnector(port, hostname);
-    this.statusRefreshIntervalMs = statusRefreshIntervalMs;
+    this.connector = new LocalSiteConnector(config.port, config.hostname);
+    this.statusRefreshIntervalMs = config.statusRefreshIntervalMs;
+    this.keepAliveIntervalMs = config.keepAliveIntervalMs;
   }
 
   async start() {

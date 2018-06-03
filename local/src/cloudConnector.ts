@@ -6,13 +6,8 @@ import * as awsIot from "aws-iot-device-sdk";
 const levelStore = require("mqtt-level-store");
 
 import { Event } from "../../common/event";
-import { UserCommand, fromJSON } from "../../common/command";
-
-interface connectParams {
-  clientId: string;
-  dataDir: string;
-  host: string;
-}
+import { UserCommand, fromJSON } from "../../common/userCommand";
+import { CloudConfig } from "./config";
 
 export class CloudConnector {
   private readonly clientId: string;
@@ -21,10 +16,10 @@ export class CloudConnector {
   private readonly emitter: EventEmitter;
   private device?: awsIot.device;
 
-  constructor({ clientId, host, dataDir }: connectParams) {
-    this.clientId = clientId;
-    this.host = host;
-    this.dataDir = dataDir;
+  constructor(config: CloudConfig) {
+    this.clientId = config.clientId;
+    this.host = config.host;
+    this.dataDir = config.dataDir;
     this.emitter = new EventEmitter();
   }
 
