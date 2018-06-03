@@ -12,8 +12,6 @@ interface StoredEvent {
   eventID: string;
 }
 
-const docClient = new AWS.DynamoDB.DocumentClient();
-
 export async function handler(data: DynamoDBStreamEvent, context: Context) {
   console.log("dynamo event = ", data);
 
@@ -25,11 +23,9 @@ export async function handler(data: DynamoDBStreamEvent, context: Context) {
 }
 
 async function processAll(data: DynamoDBStreamEvent) {
-  return Promise.all(
-    parseStreamData(data).map(evt =>
-      processRecord(evt.thingID, evt.data.event),
-    ),
-  );
+  for (const evt of parseStreamData(data)) {
+    await processRecord(evt.thingID, evt.data.event);
+  }
 }
 
 function parseStreamData(event: DynamoDBStreamEvent): StoredEvent[] {
