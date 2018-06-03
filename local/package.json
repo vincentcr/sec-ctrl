@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
+    "dev": "nodemon --watch 'src/**/*.ts' --ignore 'src/**/*.spec.ts' --exec 'ts-node' src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Vincent Côté-Roy",
@@ -14,6 +15,7 @@
     "@types/date-fns": "^2.6.0",
     "@types/node": "^10.1.2",
     "@types/rsmq": "^0.3.27",
+    "ts-node": "^6.1.0",
     "typescript": "^2.8.3"
   },
   "dependencies": {
@@ -22,6 +24,7 @@
     "date-fns": "^1.29.0",
     "lodash": "^4.17.10",
     "mqtt-level-store": "^2.0.0",
+    "nodemon": "^1.17.5",
     "rsmq": "^0.8.3",
     "rsmq-promise": "^1.0.1",
     "uuid": "^3.2.1"

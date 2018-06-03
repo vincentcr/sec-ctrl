@@ -5,3 +5,4 @@ tmp*
 mqtt-store
 certs
 test-iot.js
+*.code-workspace
