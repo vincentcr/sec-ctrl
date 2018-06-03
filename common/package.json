@@ -1,0 +1,24 @@
+{
+  "name": "common",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index",
+  "typings": "dist/index",
+  "scripts": {
+    "build": "tsc",
+    "install": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/lodash": "^4.14.109",
+    "@types/node": "^10.1.2",
+    "@types/uuid": "^3.4.3",
+    "typescript": "^2.8.3"
+  },
+  "dependencies": {
+    "lodash": "^4.17.10",
+    "uuid": "^3.2.1"
+  }
+}

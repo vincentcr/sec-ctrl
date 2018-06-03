@@ -1,0 +1,29 @@
+{
+  "name": "local",
+  "version": "1.0.0",
+  "description": "sec-ctrl local daemon",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Vincent Côté-Roy",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/aws-iot-device-sdk": "^2.1.1",
+    "@types/date-fns": "^2.6.0",
+    "@types/node": "^10.1.2",
+    "@types/rsmq": "^0.3.27",
+    "typescript": "^2.8.3"
+  },
+  "dependencies": {
+    "aws-iot-device-sdk": "^2.2.1",
+    "common": "file:../common",
+    "date-fns": "^1.29.0",
+    "lodash": "^4.17.10",
+    "mqtt-level-store": "^2.0.0",
+    "rsmq": "^0.8.3",
+    "rsmq-promise": "^1.0.1",
+    "uuid": "^3.2.1"
+  }
+}

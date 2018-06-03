@@ -1,0 +1,21 @@
+{
+  "name": "event-processor",
+  "version": "1.0.0",
+  "description": "sec-ctrl cloud message processor",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Vincent Côté-Roy",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.4",
+    "@types/aws-sdk": "^2.7.0",
+    "@types/node": "^10.1.2",
+    "aws-sdk": "^2.243.1",
+    "typescript": "^2.8.3"
+  },
+  "dependencies": {
+    "lodash": "^4.17.10"
+  }
+}

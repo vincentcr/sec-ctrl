@@ -1,0 +1,7 @@
+dist
+node_modules
+tmp*
+*.zip
+mqtt-store
+certs
+test-iot.js
