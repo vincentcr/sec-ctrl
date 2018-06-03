@@ -8,4 +8,7 @@ $$
     AND ($1.expires_at IS NULL OR $1.expires_at > NOW())
 $$ LANGUAGE sql;
 
+-- CREATE FUNCTION update_state_shadow(constraint text, update text)
+
+
 COMMIT;

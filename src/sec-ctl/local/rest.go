@@ -8,8 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//type authenticate func(clientID string, secret string) (sites.Site, bool)
-
 // run starts the api with supplied tpi, and binding to supplied prt
 func runRESTAPI(site sites.Site, bindHost string, bindPort uint16) error {
 	g := gin.Default()

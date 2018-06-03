@@ -27,9 +27,13 @@ type User struct {
 
 // Site represents a site row
 type Site struct {
-	ID          UUID
-	OwnerID     UUID           `db:"owner_id"`
-	StateShadow sql.NullString `db:"state_shadow"`
+	ID             UUID
+	OwnerID        UUID           `db:"owner_id"`
+	LastKnownState sql.NullString `db:"last_known_state"`
+}
+
+type SitePartition struct {
+	ID UUID
 }
 
 // SiteEvent represents a site event row
@@ -287,6 +291,39 @@ func (db *DB) CreateEvent(siteID UUID, tstamp time.Time, level string, evt inter
 	`, level, tstamp.UTC(), siteID, data)
 
 	return e, err
+}
+
+func (db *DB) SetSiteState(siteID UUID, state interface{}) error {
+	return nil
+
+}
+
+func (db *DB) UpdateSiteState(siteID UUID, key, subKey, subKeyVal, state interface{}) error {
+
+	data, err := json.Marshal(state)
+	if err != nil {
+		return err
+	}
+
+	query := `
+	UPDATE sites
+		SET state =
+		(
+			SELECT jsonb_set(state
+				, :key
+				, jsonb_agg(CASE WHEN elem->>:subKey = :subKeyVal
+											THEN :data
+											ELSE elem
+										END))
+			FROM jsonb_array_elements(filter_data->'task_packets') elem
+		)
+		WHERE id = :id
+	`
+
+	p := map[string]interface{}{"id": siteID, "key": key, "subKey": subKey, "subKeyVal": subKeyVal, "data": data}
+	_, err = db.conn.NamedExec(query, p)
+
+	return err
 }
 
 // GetSiteEvents returns the last site events by time

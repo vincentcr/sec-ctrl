@@ -9,6 +9,12 @@ import (
 
 var logger = log.New(os.Stderr, "[cloud] ", log.LstdFlags|log.Lshortfile)
 
+type app struct {
+	db       *db.DB
+	registry *siteRegistry
+	config   config.Config
+}
+
 func main() {
 
 	cfg, err := config.Load()
@@ -21,12 +27,10 @@ func main() {
 		logger.Panicln(err)
 	}
 
-	queue, err := newQueue(cfg.RedisHost, cfg.RedisPort)
+	registry, err := newRegistry(db, cfg)
 	if err != nil {
 		logger.Panicln(err)
 	}
-
-	registry := newRegistry(db, queue)
 
 	runRESTAPI(registry, db, cfg.RESTBindHost, cfg.RESTBindPort)
 }

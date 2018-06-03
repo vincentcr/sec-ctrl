@@ -61,6 +61,7 @@ func (ctrl *controller) processLoginRequest(msg tpi.ClientMessage) (bool, []tpi.
 
 	password := string(msg.Data)
 	success := password == ctrl.state.password
+	fmt.Printf("mock.processLoginRequest: %v == %v? %v\n", password, ctrl.state.password, success)
 	if success {
 		res = tpi.LoginResSuccess
 	} else {
@@ -113,46 +114,40 @@ func (ctrl *controller) processStatusReport(msg tpi.ClientMessage) ([]tpi.Server
 	return replies, nil
 }
 
-func zoneStateToServerCode(state sites.ZoneState) tpi.ServerCode {
-	switch state {
-	case sites.ZoneStateAlarm:
-		return tpi.ServerCodeZoneAlarm
-	case sites.ZoneStateAlarmRestore:
-		return tpi.ServerCodeZoneAlarmRestore
-	case sites.ZoneStateTemper:
-		return tpi.ServerCodeZoneTemper
-	case sites.ZoneStateTemperRestore:
-		return tpi.ServerCodeZoneTemperRestore
-	case sites.ZoneStateFault:
-		return tpi.ServerCodeZoneFault
-	case sites.ZoneStateFaultRestore:
-		return tpi.ServerCodeZoneFaultRestore
-	case sites.ZoneStateOpen:
-		return tpi.ServerCodeZoneOpen
-	case sites.ZoneStateRestore:
-		return tpi.ServerCodeZoneRestore
-	}
+var zoneStateToServerCodeMap = map[sites.ZoneState]tpi.ServerCode{
+	sites.ZoneStateAlarm: tpi.ServerCodeZoneAlarm,
+	sites.ZoneStateAlarmRestore: tpi.ServerCodeZoneAlarmRestore,
+	sites.ZoneStateTemper: tpi.ServerCodeZoneTemper,
+	sites.ZoneStateTemperRestore: tpi.ServerCodeZoneTemperRestore,
+	sites.ZoneStateFault: tpi.ServerCodeZoneFault,
+	sites.ZoneStateFaultRestore: tpi.ServerCodeZoneFaultRestore,
+	sites.ZoneStateOpen: tpi.ServerCodeZoneOpen,
+	sites.ZoneStateRestore: tpi.ServerCodeZoneRestore,
+}
 
-	panic(fmt.Errorf("Unmapped zone state: %v", state))
+func zoneStateToServerCode(state sites.ZoneState) tpi.ServerCode {
+	code, ok := zoneStateToServerCodeMap[state]
+	if !ok {
+		panic(fmt.Errorf("Unmapped zone state: %v", state))
+	}
+	return code
+}
+
+var partitionStateToServerCodeMap = map[sites.PartitionState]tpi.ServerCode{
+	sites.PartitionStateReady: tpi.ServerCodePartitionReady,
+	sites.PartitionStateNotReady: tpi.ServerCodePartitionNotReady,
+	sites.PartitionStateArmed: tpi.ServerCodePartitionArmed,
+	sites.PartitionStateInAlarm: tpi.ServerCodePartitionInAlarm,
+	sites.PartitionStateDisarmed: tpi.ServerCodePartitionDisarmed,
+	sites.PartitionStateBusy: tpi.ServerCodePartitionBusy,
 }
 
 func partitionStateToServerCode(state sites.PartitionState) tpi.ServerCode {
-	switch state {
-	case sites.PartitionStateReady:
-		return tpi.ServerCodePartitionReady
-	case sites.PartitionStateNotReady:
-		return tpi.ServerCodePartitionNotReady
-	case sites.PartitionStateArmed:
-		return tpi.ServerCodePartitionArmed
-	case sites.PartitionStateInAlarm:
-		return tpi.ServerCodePartitionInAlarm
-	case sites.PartitionStateDisarmed:
-		return tpi.ServerCodePartitionDisarmed
-	case sites.PartitionStateBusy:
-		return tpi.ServerCodePartitionBusy
+	code, ok := partitionStateToServerCodeMap[state]
+	if !ok {
+		panic(fmt.Errorf("Unmapped partition state: %v", state))
 	}
-
-	panic(fmt.Errorf("Unmapped partition state: %v", state))
+	return code
 }
 
 // triggerAlarm triggers an alarm of specfied type on specified partition and zone:

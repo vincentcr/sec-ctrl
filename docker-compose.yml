@@ -57,7 +57,8 @@ services:
     volumes:
       - ".docker-state/mock-state.json:/mock-state.json"
     environment:
-      - "SecCtl.Mock.StateFilePath=/mock-state.json"
+      - "SecCtl.Mock.StateFilename=/mock-state.json"
     ports:
       - 9751:9751
+      - 4025:4025
 

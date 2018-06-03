@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"sec-ctl/cloud/config"
 	"sec-ctl/cloud/db"
 	"sec-ctl/pkg/sites"
 	"sec-ctl/pkg/ws"
@@ -10,53 +11,34 @@ import (
 	"time"
 )
 
-// type siteRegistry struct {
-// 	sites map[string]*remoteSite
-// }
-
-// func newRegistry() *siteRegistry {
-// 	return &siteRegistry{
-// 		sites: map[string]*remoteSite{},
-// 	}
-// }
-
-// func (r *siteRegistry) getSite(id string) (*remoteSite, bool) {
-// 	s, ok := r.sites[id]
-// 	return s, ok
-// }
-
-// func (r *siteRegistry) addSite(c *remoteSite) {
-// 	c.registry = r
-// 	r.sites[c.id] = c
-// }
-
-// func (r *siteRegistry) removeSite(c *remoteSite) {
-// 	delete(r.sites, c.id)
-// }
-
 const queueNameSiteRemoved = "sites.removed"
 
 type siteRegistry struct {
 	db             *db.DB
 	queue          *queue
-	connectedSites sync.Map
+	connectedSites sync.Map // map[db.UUID]SiteController
 }
 
-func newRegistry(dbConn *db.DB, queue *queue) *siteRegistry {
+func newRegistry(dbConn *db.DB, cfg config.Config) (*siteRegistry, error) {
+
+	q, err := newQueue(cfg.RedisHost, cfg.RedisPort)
+	if err != nil {
+		return nil, err
+	}
 
 	sr := &siteRegistry{
 		db:             dbConn,
-		queue:          queue,
+		queue:          q,
 		connectedSites: sync.Map{},
 	}
 
-	queue.startConsumeLoop(queueNameSiteRemoved, func(msg qMessage) error {
+	q.startConsumeLoop(queueNameSiteRemoved, func(msg qMessage) error {
 		siteID := db.UUID(msg.data)
 		sr.connectedSites.Delete(siteID)
 		return nil
 	})
 
-	return sr
+	return sr, nil
 }
 
 func (r *siteRegistry) initRemoteSite(site db.Site, conn *ws.Conn) {
@@ -70,7 +52,8 @@ func (r *siteRegistry) initRemoteSite(site db.Site, conn *ws.Conn) {
 			logger.Panicf("failed to parse event from json %v: %v", msg.data, err)
 		}
 
-		return r.db.CreateEvent(site.ID, evt.Time, string(evt.Level), evt)
+		_, err := r.db.CreateEvent(site.ID, evt.Time, string(evt.Level), evt)
+		return err
 	})
 }
 
@@ -100,7 +83,6 @@ func (r *siteRegistry) sendCommand(id db.UUID, cmd sites.UserCommand) error {
 	return r.queue.publishEx(queueName, data, expires)
 }
 
-func (r *siteRegistry) getLatestEvents(id db.UUID, max uint) ([]db.Event, error) {
-	return r.db.GetLatestEvents(id, max)
-
+func (r *siteRegistry) getLatestEvents(id db.UUID, max uint) ([]db.SiteEvent, error) {
+	return r.db.GetSiteEvents(id, 0, max)
 }

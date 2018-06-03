@@ -1,4 +1,5 @@
 *.sublime-*
+*.code-workspace
 *.pyc
 venv
 app

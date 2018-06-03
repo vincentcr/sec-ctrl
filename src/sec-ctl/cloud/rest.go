@@ -116,7 +116,11 @@ func (rest rest) setup() {
 			return
 		}
 
-		rest.db.ClaimSite(user, site.id, claimForm.ClaimToken)
+		err := rest.db.ClaimSite(user, site.id, claimForm.ClaimToken)
+		if err != nil {
+			c.JSON(500, "Internal Error")
+			return
+		}
 	})
 
 	sitesRouter := rest.gin.Group("/sites/:id", rest.authUserByToken(), rest.getSite())

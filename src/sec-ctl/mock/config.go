@@ -20,5 +20,8 @@ var defaultConfig = config{
 
 func loadConfig() (config, error) {
 	cfg, err := util.LoadConfig("Mock", defaultConfig)
-	return cfg.(config), err
+	if err != nil {
+		return config{}, err
+	}
+	return cfg.(config), nil
 }

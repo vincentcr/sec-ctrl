@@ -1,7 +1,6 @@
 package sites
 
 type SystemState struct {
-	ID            string
 	Partitions    []Partition
 	Zones         []Zone
 	Alarms        []Alarm
