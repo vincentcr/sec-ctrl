@@ -14,6 +14,8 @@ OUT_DIR=$TMP_DIR/dist
 # delete old archive
 rm -f $PKG
 
+npm run test >&2
+
 # compile TS files
 tsc --outDir $OUT_DIR
 

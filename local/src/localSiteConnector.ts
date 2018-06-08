@@ -1,7 +1,9 @@
-import { Socket } from "net";
 import { EventEmitter } from "events";
+import { Socket } from "net";
+
 import { ServerCode } from "../../common/codes";
-import { ServerMessage, ClientMessage } from "../../common/message";
+import { ClientMessage, ServerMessage } from "../../common/message";
+import logger from "./logger";
 
 const SEP = new Buffer("\r\n");
 
@@ -19,15 +21,19 @@ export class LocalSiteConnector {
 
   async start() {
     this.socket.on("data", (data: Buffer) => {
-      console.log("received:", data);
+      logger.debug("received:", data);
       this.processData(data);
     });
 
     return new Promise(resolve => {
-      this.socket.connect(this.port, this.hostname, () => {
-        console.log(`connected to ${this.hostname}:${this.port}`);
-        resolve();
-      });
+      this.socket.connect(
+        this.port,
+        this.hostname,
+        () => {
+          logger.debug(`connected to ${this.hostname}:${this.port}`);
+          resolve();
+        }
+      );
     });
   }
 
@@ -70,7 +76,7 @@ export class LocalSiteConnector {
 }
 
 function hasEndOfMessage(data: Buffer) {
-  return SEP.compare(data, data.length - SEP.length) == 0;
+  return SEP.compare(data, data.length - SEP.length) === 0;
 }
 
 function* decodeMessages(buf: Buffer) {
@@ -86,7 +92,7 @@ function* splitBufferBySep(buf: Buffer) {
     const nextIdx = buf.indexOf(SEP, idx);
     if (nextIdx < 0) {
       throw new Error(
-        `Invalid data: crlf not found after index ${idx} in ${buf}`,
+        `Invalid data: crlf not found after index ${idx} in ${buf}`
       );
     }
     const msgBuf = buf.slice(idx, nextIdx);

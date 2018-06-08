@@ -1,7 +1,7 @@
 import { Context, DynamoDBStreamEvent } from "aws-lambda";
-import { processRecord } from "./processRecord";
 import * as AWS from "aws-sdk";
 import { Event } from "../../../common/event";
+import { processRecord } from "./processRecord";
 
 import logger from "./logger";
 
@@ -37,6 +37,6 @@ function parseStreamData(event: DynamoDBStreamEvent): StoredEvent[] {
       const evt = AWS.DynamoDB.Converter.unmarshall(img) as StoredEvent;
       logger.debug("evt =>", evt);
       return evt;
-    },
+    }
   );
 }

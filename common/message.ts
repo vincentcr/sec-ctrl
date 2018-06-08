@@ -1,11 +1,11 @@
-import { ServerCode, ClientCode } from "./codes";
+import { ClientCode, ServerCode } from "./codes";
 import { decodeIntCode, encodeIntCode } from "./encodings";
 
 const CODE_LEN = 3;
 const CHECKSUM_LEN = 2;
 
 function mkMessageClass<TCode extends number>(
-  codeDesc: (code: TCode) => string,
+  codeDesc: (code: TCode) => string
 ) {
   return class Message {
     readonly code: TCode;
@@ -61,14 +61,14 @@ function mkMessageClass<TCode extends number>(
       // verify checksum
       const actualChecksum = computeChecksum(bytes.slice(0, dataEnd));
 
-      if (expectedChecksum.toLowerCase() != actualChecksum.toLowerCase()) {
+      if (expectedChecksum.toLowerCase() !== actualChecksum.toLowerCase()) {
         throw new Error(
           `failed to decode message ${bytes}: ` +
-            `data ${data}, expected checksum ${expectedChecksum}, actual ${actualChecksum}`,
+            `data ${data}, expected checksum ${expectedChecksum}, actual ${actualChecksum}`
         );
       }
 
-      const code = <TCode>decodeIntCode(codeBytes);
+      const code = decodeIntCode(codeBytes) as TCode;
 
       const msg = new Message(code, data);
 
@@ -89,9 +89,9 @@ function computeChecksum(bytes: Buffer): string {
 }
 
 export class ServerMessage extends mkMessageClass<ServerCode>(
-  (c: ServerCode) => ServerCode[c],
+  (c: ServerCode) => ServerCode[c]
 ) {}
 
 export class ClientMessage extends mkMessageClass<ClientCode>(
-  c => ClientCode[c],
+  c => ClientCode[c]
 ) {}

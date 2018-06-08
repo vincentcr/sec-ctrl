@@ -2,11 +2,12 @@
   "name": "event-processor",
   "version": "1.0.0",
   "description": "sec-ctrl cloud message processor",
-  "main": "lib/index.js",
+  "main": "dist/index.js",
   "scripts": {
+    "lint": "tslint --project .",
     "build": "tsc",
-    "deploy": "AWS_PROFILE=polymatix LAMBDA_NAME=test1 ../.bin/update-lambda.sh",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "deploy": "AWS_PROFILE=polymatix LAMBDA_NAME=sec-ctrl-events ../.bin/update-lambda.sh",
+    "test": "npm run lint"
   },
   "author": "Vincent Côté-Roy",
   "license": "ISC",
@@ -16,9 +17,12 @@
     "@types/bunyan": "^1.8.4",
     "@types/node": "^10.1.2",
     "aws-sdk": "^2.243.1",
+    "tslint": "^5.10.0",
+    "tslint-config-prettier": "^1.13.0",
     "typescript": "^2.8.3"
   },
   "dependencies": {
+    "bunyan": "^1.8.12",
     "lodash": "^4.17.10"
   }
 }

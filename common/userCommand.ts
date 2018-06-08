@@ -17,9 +17,9 @@ export const enum PanicTarget {
   TargetPolice = "3",
 }
 
-export type UserCommandBase = {
+export interface UserCommandBase {
   validUntil: Date;
-};
+}
 
 export interface UserCommandStatusReport extends UserCommandBase {
   code: UserCommandCode.StatusReport;

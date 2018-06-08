@@ -1,10 +1,10 @@
 import { EventEmitter } from "events";
 
-import { ServerCode, ClientCode } from "../../common/codes";
-import { ServerMessage, ClientMessage } from "../../common/message";
-import { LoginRes, getLoginRes } from "./loginRes";
-import { LocalSiteConnector } from "./localSiteConnector";
+import { ClientCode, ServerCode } from "../../common/codes";
+import { ClientMessage, ServerMessage } from "../../common/message";
 import { LocalConfig } from "./config";
+import { LocalSiteConnector } from "./localSiteConnector";
+import { getLoginRes, LoginRes } from "./loginRes";
 
 export class LocalSite {
   private readonly password: string;

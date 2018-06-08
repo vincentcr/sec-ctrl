@@ -5,6 +5,7 @@
   "main": "dist/index",
   "typings": "dist/index",
   "scripts": {
+    "lint": "tslint --project .",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,6 +15,8 @@
     "@types/lodash": "^4.14.109",
     "@types/node": "^10.1.2",
     "@types/uuid": "^3.4.3",
+    "tslint": "^5.10.0",
+    "tslint-config-prettier": "^1.13.0",
     "typescript": "^2.8.3"
   },
   "dependencies": {

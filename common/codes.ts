@@ -16,7 +16,7 @@ const clientCodesByValue = _.keyBy(clientCodes, "value");
 
 enum Foo {
   x = 1,
-  y = 40,
+  y = 40
 }
 
 // Foo.constructor;
@@ -41,7 +41,7 @@ export enum ClientCode {
   EnterUserCodeProgramming = 72,
   EnterUserProgramming = 73,
   KeepAlive = 74,
-  CodeSend = 200,
+  CodeSend = 200
 }
 
 export enum ServerCode {
@@ -115,5 +115,5 @@ export enum ServerCode {
   CodeRequired = 900,
   CommandOutputPressed = 912,
   MasterCodeRequired = 921,
-  InstallersCodeRequired = 922,
+  InstallersCodeRequired = 922
 }

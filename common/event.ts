@@ -1,12 +1,12 @@
 import * as uuid from "uuid";
 
-import { ServerMessage } from "./message";
 import { ServerCode } from "./codes";
+import { decodeHexByte, decodeIntCode, encodeIntCode } from "./encodings";
 import { errorCodeDescriptions } from "./errorCode";
-import { PartitionStatus, KeypadLedState } from "./partition";
-import { ZoneStatus } from "./zone";
-import { decodeIntCode, encodeIntCode, decodeHexByte } from "./encodings";
+import { ServerMessage } from "./message";
+import { KeypadLedState, PartitionStatus } from "./partition";
 import { SystemTroubleStatus } from "./systemTroubleStatus";
+import { ZoneStatus } from "./zone";
 
 export const enum EventType {
   Info = "Info",
@@ -16,7 +16,7 @@ export const enum EventType {
   Alarm = "Alarm",
   ZoneChange = "ZoneChange",
   PartitionChange = "PartitionChange",
-  Partition = "Partition",
+  Partition = "Partition"
 }
 
 export interface BaseEvent {
@@ -52,7 +52,7 @@ export interface AlarmEvent extends BaseEvent {
 export const enum PartitionChangeEventType {
   Status = "Status",
   KeypadLed = "KeypadLed",
-  TroubleLed = "TroubleLed",
+  TroubleLed = "TroubleLed"
 }
 
 export interface PartitionChangeBaseEvent extends BaseEvent {
@@ -206,7 +206,7 @@ function buildSystemErrorEvent(msg: ServerMessage): SystemErrorEvent {
     date: new Date(),
     id: uuid.v1(),
     type: EventType.SystemError,
-    code: errDesc,
+    code: errDesc
   };
 }
 
@@ -216,7 +216,7 @@ function buildInfoEvent(msg: ServerMessage): InfoEvent {
     id: uuid.v1(),
     type: EventType.Info,
     code: ServerCode[msg.code],
-    data: msg.data.toString(),
+    data: msg.data.toString()
   };
 }
 
@@ -225,7 +225,7 @@ function buildTroubleEvent(msg: ServerMessage): TroubleEvent {
     date: new Date(),
     id: uuid.v1(),
     type: EventType.Trouble,
-    code: ServerCode[msg.code],
+    code: ServerCode[msg.code]
   };
 }
 
@@ -234,7 +234,7 @@ function buildAlarmEvent(msg: ServerMessage): AlarmEvent {
     date: new Date(),
     id: uuid.v1(),
     type: EventType.Alarm,
-    code: ServerCode[msg.code],
+    code: ServerCode[msg.code]
   };
 }
 
@@ -246,13 +246,13 @@ function buildTroubleStatusEvent(msg: ServerMessage): SystemTroubleStatusEvent {
     date: new Date(),
     id: uuid.v1(),
     type: EventType.SystemTroubleStatus,
-    status,
+    status
   };
 }
 
 function buildPartitionStatusChangeEvent(
   msg: ServerMessage,
-  status: PartitionStatus,
+  status: PartitionStatus
 ): PartitionStatusChangeEvent {
   const partitionID = msg.data.toString();
 
@@ -262,13 +262,13 @@ function buildPartitionStatusChangeEvent(
     type: EventType.PartitionChange,
     changeType: PartitionChangeEventType.Status,
     partitionID,
-    status,
+    status
   };
 }
 
 function buildPartitionKeypadLedStateChangeEvent(
   msg: ServerMessage,
-  flash: boolean,
+  flash: boolean
 ): PartitionKeypadLedStateChangeEvent {
   const partitionID = "1";
   const flags = decodeHexByte(msg.data);
@@ -281,13 +281,13 @@ function buildPartitionKeypadLedStateChangeEvent(
     changeType: PartitionChangeEventType.KeypadLed,
     partitionID,
     keypadState,
-    flash,
+    flash
   };
 }
 
 function buildPartitionTroubleLedChangeEvent(
   msg: ServerMessage,
-  on: boolean,
+  on: boolean
 ): PartitionTroubleLedStateChangeEvent {
   const partitionID = msg.data.toString();
 
@@ -297,13 +297,13 @@ function buildPartitionTroubleLedChangeEvent(
     type: EventType.PartitionChange,
     changeType: PartitionChangeEventType.TroubleLed,
     partitionID,
-    on,
+    on
   };
 }
 
 function buildZoneStatusChangeEvent(
   msg: ServerMessage,
-  status: ZoneStatus,
+  status: ZoneStatus
 ): ZoneChangeEvent {
   let zoneID: string;
   let partitionID: string | undefined;
@@ -313,7 +313,7 @@ function buildZoneStatusChangeEvent(
       ZoneStatus.Fault,
       ZoneStatus.FaultRestore,
       ZoneStatus.Open,
-      ZoneStatus.Restore,
+      ZoneStatus.Restore
     ].includes(status)
   ) {
     zoneID = msg.data.toString();
@@ -328,7 +328,7 @@ function buildZoneStatusChangeEvent(
     type: EventType.ZoneChange,
     zoneID,
     partitionID,
-    status,
+    status
   };
 }
 
@@ -340,7 +340,7 @@ function buildPartitionEvent(msg: ServerMessage): PartitionEvent {
     id: uuid.v1(),
     type: EventType.Partition,
     partitionID,
-    code: ServerCode[msg.code],
+    code: ServerCode[msg.code]
   };
 }
 
@@ -354,6 +354,6 @@ function buildUserPartitionEvent(msg: ServerMessage): PartitionEvent {
     type: EventType.Partition,
     partitionID,
     userID,
-    code: ServerCode[msg.code],
+    code: ServerCode[msg.code]
   };
 }

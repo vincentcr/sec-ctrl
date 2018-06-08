@@ -1,7 +1,10 @@
-export type Flag = { value: number; desc: string };
-export type FlagsDefinition = {
+export interface Flag {
+  value: number;
+  desc: string;
+}
+export interface FlagsDefinition {
   [desc: string]: number;
-};
+}
 
 export class Flags {
   readonly definitions: FlagsDefinition;
@@ -19,7 +22,7 @@ export class Flags {
     const flags = [];
 
     for (const [desc, mask] of Object.entries(this.definitions)) {
-      if ((flagBits & mask) != 0) {
+      if ((flagBits & mask) !== 0) {
         remainder = remainder & ~mask;
         flags.push({ value: mask, desc });
       }
@@ -30,7 +33,7 @@ export class Flags {
         "invalid flag bits: " +
           flagBits.toString(2) +
           "non-zero remainder: " +
-          remainder.toString(2),
+          remainder.toString(2)
       );
     }
 

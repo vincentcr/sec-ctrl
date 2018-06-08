@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon --watch 'src/**/*.ts' --ignore 'src/**/*.spec.ts' --exec 'ts-node' src/index.ts | bunyan",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "tslint --project .",
+    "test": "npm run lint"
   },
   "author": "Vincent Côté-Roy",
   "license": "ISC",
@@ -16,11 +17,15 @@
     "@types/date-fns": "^2.6.0",
     "@types/node": "^10.1.2",
     "@types/rsmq": "^0.3.27",
+    "prettier": "^1.13.4",
     "ts-node": "^6.1.0",
+    "tslint": "^5.10.0",
+    "tslint-config-prettier": "^1.13.0",
     "typescript": "^2.8.3"
   },
   "dependencies": {
     "aws-iot-device-sdk": "^2.2.1",
+    "bunyan": "^1.8.12",
     "common": "file:../common",
     "date-fns": "^1.29.0",
     "lodash": "^4.17.10",

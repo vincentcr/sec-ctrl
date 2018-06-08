@@ -1,12 +1,12 @@
 import * as awsIot from "aws-iot-device-sdk";
 
-import { loadConfig } from "./config";
-import { LocalSiteConnector } from "./localSiteConnector";
-import { LocalSite } from "./localSite";
-import { ServerMessage, ClientMessage } from "../../common/message";
 import { Event, fromServerMessage } from "../../common/event";
-import { UserCommand, toClientMessage } from "../../common/userCommand";
+import { ClientMessage, ServerMessage } from "../../common/message";
+import { toClientMessage, UserCommand } from "../../common/userCommand";
 import { CloudConnector } from "./cloudConnector";
+import { loadConfig } from "./config";
+import { LocalSite } from "./localSite";
+import { LocalSiteConnector } from "./localSiteConnector";
 import logger from "./logger";
 
 async function main() {
@@ -38,7 +38,7 @@ async function main() {
 }
 
 main()
-  .then(() => {})
+  .then(() => undefined)
   .catch(err => {
     throw err;
   });

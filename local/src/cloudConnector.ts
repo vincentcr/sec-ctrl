@@ -1,12 +1,12 @@
-import * as path from "path";
 import { EventEmitter } from "events";
+import * as path from "path";
 
-import * as dateFns from "date-fns";
 import * as awsIot from "aws-iot-device-sdk";
-const levelStore = require("mqtt-level-store");
+import * as dateFns from "date-fns";
+import * as levelStore from "mqtt-level-store";
 
 import { Event } from "../../common/event";
-import { UserCommand, fromJSON } from "../../common/userCommand";
+import { fromJSON, UserCommand } from "../../common/userCommand";
 import { CloudConfig } from "./config";
 import logger from "./logger";
 
@@ -34,7 +34,7 @@ export class CloudConnector {
       certPath: path.join(this.dataDir, "certs", "crt.pem"),
       caPath: path.join(this.dataDir, "certs", "ca.pem"),
       incomingStore: storeManager.incoming,
-      outgoingStore: storeManager.outgoing,
+      outgoingStore: storeManager.outgoing
     });
 
     this.device.on("connect", () => {
@@ -51,7 +51,7 @@ export class CloudConnector {
     this.device.on("message", this._parseIncomingMessage.bind(this));
 
     return new Promise(resolve => {
-      this.device!.once("connect", function() {
+      this.device!.once("connect", () => {
         resolve();
       });
     });
@@ -72,14 +72,14 @@ export class CloudConnector {
         if (err != null) {
           logger.debug("failed to publish message: ", err);
         }
-      },
+      }
     );
   }
 
   _parseIncomingMessage(topic: string, payload: Buffer) {
     logger.debug("incoming message: ", topic, payload);
 
-    if (topic != this._mkTopic("commands")) {
+    if (topic !== this._mkTopic("commands")) {
       logger.debug("received unexpected message:", topic, payload);
     }
 

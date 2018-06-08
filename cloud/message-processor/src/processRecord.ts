@@ -4,12 +4,12 @@ import logger from "./logger";
 
 import {
   Event,
-  fromJson,
   EventType,
+  fromJson,
   PartitionChangeEvent,
   PartitionChangeEventType,
-  ZoneChangeEvent,
   SystemTroubleStatusEvent,
+  ZoneChangeEvent
 } from "../../../common/event";
 import { Partition } from "../../../common/partition";
 import { Zone } from "../../../common/zone";
@@ -56,16 +56,16 @@ async function updatePartition(thingID: string, evt: PartitionChangeEvent) {
         Key: { thingID },
         UpdateExpression: "SET #parts = :initParts",
         ExpressionAttributeNames: {
-          "#parts": "partitions",
+          "#parts": "partitions"
         },
         ExpressionAttributeValues: {
-          ":initParts": {},
+          ":initParts": {}
         },
-        ConditionExpression: "attribute_not_exists(#parts)",
+        ConditionExpression: "attribute_not_exists(#parts)"
       })
       .promise();
   } catch (err) {
-    if (err.code != "ConditionalCheckFailedException") {
+    if (err.code !== "ConditionalCheckFailedException") {
       throw err;
     }
   }
@@ -78,16 +78,16 @@ async function updatePartition(thingID: string, evt: PartitionChangeEvent) {
         UpdateExpression: "SET #parts.#part = :initPart",
         ExpressionAttributeNames: {
           "#parts": "partitions",
-          "#part": partitionID,
+          "#part": partitionID
         },
         ExpressionAttributeValues: {
-          ":initPart": {},
+          ":initPart": {}
         },
-        ConditionExpression: "attribute_not_exists(#parts.#part)",
+        ConditionExpression: "attribute_not_exists(#parts.#part)"
       })
       .promise();
   } catch (err) {
-    if (err.code != "ConditionalCheckFailedException") {
+    if (err.code !== "ConditionalCheckFailedException") {
       throw err;
     }
   }
@@ -130,16 +130,16 @@ async function updatePartition(thingID: string, evt: PartitionChangeEvent) {
       ExpressionAttributeNames: {
         "#parts": "partitions",
         "#part": partitionID,
-        ...updateNames,
+        ...updateNames
       },
-      ExpressionAttributeValues: updateAttrs,
+      ExpressionAttributeValues: updateAttrs
     })
     .promise();
 }
 
 async function updateZone(
   thingID: string,
-  { zoneID, partitionID, status }: ZoneChangeEvent,
+  { zoneID, partitionID, status }: ZoneChangeEvent
 ) {
   const zone = { zoneID, partitionID, status };
 
@@ -152,13 +152,13 @@ async function updateZone(
         Key: { thingID },
         UpdateExpression: "SET zones = :initZones",
         ExpressionAttributeValues: {
-          ":initZones": {},
+          ":initZones": {}
         },
-        ConditionExpression: "attribute_not_exists(zones)",
+        ConditionExpression: "attribute_not_exists(zones)"
       })
       .promise();
   } catch (err) {
-    if (err.code != "ConditionalCheckFailedException") {
+    if (err.code !== "ConditionalCheckFailedException") {
       throw err;
     }
   }
@@ -170,15 +170,15 @@ async function updateZone(
       UpdateExpression: `SET zones.#zoneID = :zone`,
       ExpressionAttributeNames: { "#zoneID": zoneID },
       ExpressionAttributeValues: {
-        ":zone": zone,
-      },
+        ":zone": zone
+      }
     })
     .promise();
 }
 
 async function updateSystemTroubleStatus(
   thingID: string,
-  evt: SystemTroubleStatusEvent,
+  evt: SystemTroubleStatusEvent
 ) {
   const { status } = evt;
 
@@ -188,8 +188,8 @@ async function updateSystemTroubleStatus(
       Key: { thingID },
       UpdateExpression: `SET systemTroubleStatus = :status`,
       ExpressionAttributeValues: {
-        ":status": status,
-      },
+        ":status": status
+      }
     })
     .promise();
 }
