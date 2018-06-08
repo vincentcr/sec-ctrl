@@ -1,4 +1,7 @@
 import * as AWS from "aws-sdk";
+
+import logger from "./logger";
+
 import {
   Event,
   fromJson,
@@ -140,7 +143,7 @@ async function updateZone(
 ) {
   const zone = { zoneID, partitionID, status };
 
-  console.log("updateZone:", thingID, zone);
+  logger.debug("updateZone:", thingID, zone);
 
   try {
     await dynamodbClient

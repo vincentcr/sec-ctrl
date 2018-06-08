@@ -13,6 +13,7 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.4",
     "@types/aws-sdk": "^2.7.0",
+    "@types/bunyan": "^1.8.4",
     "@types/node": "^10.1.2",
     "aws-sdk": "^2.243.1",
     "typescript": "^2.8.3"

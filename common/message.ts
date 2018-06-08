@@ -32,8 +32,6 @@ function mkMessageClass<TCode extends number>(
 
       bytes.write(checksum, dataEndIdx);
 
-      console.log(`msg encode: ${this}; checksum: ${checksum} => ${bytes}`);
-
       return bytes;
     }
 
@@ -73,10 +71,6 @@ function mkMessageClass<TCode extends number>(
       const code = <TCode>decodeIntCode(codeBytes);
 
       const msg = new Message(code, data);
-
-      console.log(
-        `msg decode: ${bytes} => ${msg}; checksum: ${expectedChecksum}`,
-      );
 
       return msg;
     }

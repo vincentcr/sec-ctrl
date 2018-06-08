@@ -8,6 +8,7 @@ const levelStore = require("mqtt-level-store");
 import { Event } from "../../common/event";
 import { UserCommand, fromJSON } from "../../common/userCommand";
 import { CloudConfig } from "./config";
+import logger from "./logger";
 
 export class CloudConnector {
   private readonly clientId: string;
@@ -37,14 +38,14 @@ export class CloudConnector {
     });
 
     this.device.on("connect", () => {
-      this.debug("connection established");
+      logger.debug("connection established");
       this.device!.subscribe(this._mkTopic("commands"));
     });
     this.device.on("close", () => {
-      this.debug("connection closed");
+      logger.debug("connection closed");
     });
     this.device.on("error", err => {
-      this.debug("connection error:", err);
+      logger.debug("connection error:", err);
     });
 
     this.device.on("message", this._parseIncomingMessage.bind(this));
@@ -69,17 +70,17 @@ export class CloudConnector {
       { qos: 1 },
       err => {
         if (err != null) {
-          this.debug("failed to publish message: ", err);
+          logger.debug("failed to publish message: ", err);
         }
       },
     );
   }
 
   _parseIncomingMessage(topic: string, payload: Buffer) {
-    this.debug("incoming message: ", topic, payload);
+    logger.debug("incoming message: ", topic, payload);
 
     if (topic != this._mkTopic("commands")) {
-      this.debug("received unexpected message:", topic, payload);
+      logger.debug("received unexpected message:", topic, payload);
     }
 
     const cmd = fromJSON(payload.toString());
@@ -88,10 +89,5 @@ export class CloudConnector {
 
   onCommand(listener: (cmd: UserCommand) => void) {
     this.emitter.on("command", listener);
-  }
-
-  private debug(...msgs: any[]) {
-    const ts = dateFns.format(new Date(), "YYYY-MM-DD HH:mm:ss.SSS");
-    console.log(`[CloudConnector ${ts}]:`, ...msgs);
   }
 }

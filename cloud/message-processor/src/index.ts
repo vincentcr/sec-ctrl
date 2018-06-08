@@ -3,6 +3,8 @@ import { processRecord } from "./processRecord";
 import * as AWS from "aws-sdk";
 import { Event } from "../../../common/event";
 
+import logger from "./logger";
+
 interface StoredEvent {
   data: {
     event: Event;
@@ -13,12 +15,12 @@ interface StoredEvent {
 }
 
 export async function handler(data: DynamoDBStreamEvent, context: Context) {
-  console.log("dynamo event = ", data);
+  logger.debug("dynamo event = ", data);
 
   try {
     await processAll(data);
   } catch (err) {
-    console.log("failed to process event with payload", data, "\nerror:", err);
+    logger.debug("failed to process event with payload", data, "\nerror:", err);
   }
 }
 
@@ -33,7 +35,7 @@ function parseStreamData(event: DynamoDBStreamEvent): StoredEvent[] {
     ({ dynamodb }) => {
       const img = dynamodb!.NewImage!;
       const evt = AWS.DynamoDB.Converter.unmarshall(img) as StoredEvent;
-      console.log("evt =>", evt);
+      logger.debug("evt =>", evt);
       return evt;
     },
   );

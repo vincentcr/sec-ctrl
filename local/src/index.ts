@@ -7,9 +7,10 @@ import { ServerMessage, ClientMessage } from "../../common/message";
 import { Event, fromServerMessage } from "../../common/event";
 import { UserCommand, toClientMessage } from "../../common/userCommand";
 import { CloudConnector } from "./cloudConnector";
+import logger from "./logger";
 
 async function main() {
-  console.log("starting");
+  logger.debug("starting");
 
   const config = loadConfig();
   const localSite = new LocalSite(config.local);
@@ -17,23 +18,23 @@ async function main() {
 
   localSite.onMessage(msg => {
     const evt = fromServerMessage(msg);
-    console.log("parsed msg:", msg, "=>", evt);
+    logger.debug("parsed msg:", msg, "=>", evt);
     cloudConnector.publishEvent(evt);
   });
 
   cloudConnector.onCommand((cmd: UserCommand) => {
     if (cmd.validUntil >= new Date()) {
       const msg = toClientMessage(cmd);
-      console.log("received cmd:", cmd, "=>", msg);
+      logger.debug("received cmd:", cmd, "=>", msg);
       localSite.sendMessage(msg);
     } else {
-      console.log("ignoring expired command:", cmd);
+      logger.debug("ignoring expired command:", cmd);
     }
   });
 
   await Promise.all([localSite.start(), cloudConnector.start()]);
 
-  console.log("all systems go");
+  logger.debug("all systems go");
 }
 
 main()
@@ -43,6 +44,6 @@ main()
   });
 
 process.on("unhandledRejection", (reason, promise) => {
-  console.log("unhandledRejection", reason);
+  logger.error("unhandledRejection", reason);
   process.exit(1);
 });
