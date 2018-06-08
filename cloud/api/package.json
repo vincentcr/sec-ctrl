@@ -1,0 +1,33 @@
+{
+  "name": "@sec-ctrl/api",
+  "version": "1.0.0",
+  "description": "sec-ctrl api",
+  "main": "index.js",
+  "scripts": {
+    "lint": "tslint --project src",
+    "build": "tsc",
+    "deploy": "AWS_PROFILE=polymatix LAMBDA_NAME=sec-ctrl-api ../.bin/update-lambda.sh",
+    "test": "npm run lint"
+  },
+  "author": "Vincent Côté-Roy",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.6",
+    "@types/aws-sdk": "^2.7.0",
+    "@types/aws-serverless-express": "^3.0.1",
+    "@types/compression": "0.0.36",
+    "@types/cors": "^2.8.4",
+    "@types/express": "^4.16.0",
+    "@types/node": "^10.3.1",
+    "tslint": "^5.10.0",
+    "tslint-config-prettier": "^1.13.0",
+    "typescript": "^2.9.1"
+  },
+  "dependencies": {
+    "aws-serverless-express": "^3.2.0",
+    "body-parser": "^1.18.3",
+    "compression": "^1.7.2",
+    "cors": "^2.8.4",
+    "express": "^4.16.3"
+  }
+}
