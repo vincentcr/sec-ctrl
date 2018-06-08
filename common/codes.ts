@@ -22,45 +22,25 @@ enum Foo {
 // Foo.constructor;
 
 export enum ClientCode {
-  // Poll is the code for the Poll command
   Poll = 0,
-  // StatusReport is the code for the StatusReport command
   StatusReport = 1,
-  // DumpZoneTimers is the code for the DumpZoneTimers command
   DumpZoneTimers = 8,
-  // NetworkLogin is the code for the NetworkLogin command
   NetworkLogin = 5,
-  // SetTimeAndDate is the code for the SetTimeAndDate command
   SetTimeAndDate = 10,
-  // CommandOutputControl is the code for the CommandOutputControl command
   CommandOutputControl = 20,
-  // PartitionArmControlAway is the code for the PartitionArmControlAway command
   PartitionArmControlAway = 30,
-  // PartitionArmControlStayArm is the code for the PartitionArmControlStayArm command
   PartitionArmControlStayArm = 31,
-  // PartitionArmControlZeroEntryDelay is the code for the PartitionArmControlZeroEntryDelay command
   PartitionArmControlZeroEntryDelay = 32,
-  // PartitionArmControlWithCode is the code for the PartitionArmControlWithCode command
   PartitionArmControlWithCode = 33,
-  // PartitionDisarmControl is the code for the PartitionDisarmControl command
   PartitionDisarmControl = 40,
-  // TimeStampControl is the code for the TimeStampControl command
   TimeStampControl = 55,
-  // TimeBroadcastControl is the code for the TimeBroadcastControl command
   TimeBroadcastControl = 56,
-  // TemperatureBroadcastControl is the code for the TemperatureBroadcastControl command
   TemperatureBroadcastControl = 57,
-  // TriggerPanicAlarm is the code for the TriggerPanicAlarm command
   TriggerPanicAlarm = 60,
-  // SendKeystrokeString is the code for the SendKeystrokeString command
   SendKeystrokeString = 71,
-  // EnterUserCodeProgramming is the code for the EnterUserCodeProgramming command
   EnterUserCodeProgramming = 72,
-  // EnterUserProgramming is the code for the EnterUserProgramming command
   EnterUserProgramming = 73,
-  // KeepAlive is the code for the KeepAlive command
   KeepAlive = 74,
-  // CodeSend is the code for the CodeSend command
   CodeSend = 200,
 }
 
