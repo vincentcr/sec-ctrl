@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "type": "object",
+  "properties": {
+    "body": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "StatusReport"
+              ]
+            }
+          },
+          "required": [
+            "code"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "ArmAway",
+                "ArmStay",
+                "ArmWithZeroEntryDelay"
+              ]
+            },
+            "partitionID": {
+              "type": "string",
+              "pattern": "^[0-9]+$"
+            }
+          },
+          "required": [
+            "code",
+            "partitionID"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "ArmWithPIN",
+                "Disarm"
+              ]
+            },
+            "pin": {
+              "type": "string",
+              "pattern": "^[0-9]+$"
+            },
+            "partitionID": {
+              "type": "string",
+              "pattern": "^[0-9]+$"
+            }
+          },
+          "required": [
+            "code",
+            "partitionID",
+            "pin"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "Panic"
+              ]
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "Fire",
+                "Ambulance",
+                "Police"
+              ]
+            }
+          },
+          "required": [
+            "code",
+            "target"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

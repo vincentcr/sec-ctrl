@@ -8,14 +8,14 @@ export const enum UserCommandCode {
   ArmWithPIN = "ArmWithPIN",
   ArmWithZeroEntryDelay = "ArmWithZeroEntryDelay",
   Disarm = "Disarm",
-  Panic = "Panic",
+  Panic = "Panic"
 }
 
-export const enum PanicTarget {
-  TargetFire = "1",
-  TargetAmbulance = "2",
-  TargetPolice = "3",
-}
+const PanicTargetCodes: { [k: string]: string } = {
+  Fire: "1",
+  Ambulance: "2",
+  Police: "3"
+};
 
 export interface UserCommandBase {
   validUntil: Date;
@@ -41,7 +41,7 @@ export interface UserCommandithPin extends UserCommandBase {
 
 export interface UserCommandPanic extends UserCommandBase {
   code: UserCommandCode.Panic;
-  target: PanicTarget;
+  target: string;
 }
 
 export type UserCommand =
@@ -56,72 +56,40 @@ export function fromJSON(data: string): UserCommand {
 }
 
 export function toClientMessage(cmd: UserCommand) {
-  validate(cmd);
-
   switch (cmd.code) {
     case UserCommandCode.StatusReport:
       return new ClientMessage(ClientCode.StatusReport);
     case UserCommandCode.ArmAway:
       return new ClientMessage(
         ClientCode.PartitionArmControlAway,
-        Buffer.from(cmd.partitionID),
+        Buffer.from(cmd.partitionID)
       );
     case UserCommandCode.ArmStay:
       return new ClientMessage(
         ClientCode.PartitionArmControlStayArm,
-        Buffer.from(cmd.partitionID),
+        Buffer.from(cmd.partitionID)
       );
     case UserCommandCode.ArmWithZeroEntryDelay:
       return new ClientMessage(
         ClientCode.PartitionArmControlZeroEntryDelay,
-        Buffer.from(cmd.partitionID),
+        Buffer.from(cmd.partitionID)
       );
     case UserCommandCode.ArmWithPIN:
       return new ClientMessage(
         ClientCode.PartitionArmControlWithCode,
-        Buffer.concat([Buffer.from(cmd.partitionID), Buffer.from(cmd.pin)]),
+        Buffer.concat([Buffer.from(cmd.partitionID), Buffer.from(cmd.pin)])
       );
     case UserCommandCode.Disarm:
       return new ClientMessage(
         ClientCode.PartitionDisarmControl,
-        Buffer.concat([Buffer.from(cmd.partitionID), Buffer.from(cmd.pin)]),
+        Buffer.concat([Buffer.from(cmd.partitionID), Buffer.from(cmd.pin)])
       );
     case UserCommandCode.Panic:
       return new ClientMessage(
         ClientCode.TriggerPanicAlarm,
-        Buffer.from(cmd.target),
+        Buffer.from(PanicTargetCodes[cmd.target].toString())
       );
     default:
       throw new Error("Unhandled user command:" + JSON.stringify(cmd));
-  }
-}
-
-function validate(cmd: UserCommand) {
-  switch (cmd.code) {
-    case UserCommandCode.StatusReport:
-      break;
-    case UserCommandCode.ArmAway:
-    case UserCommandCode.ArmStay:
-    case UserCommandCode.ArmWithZeroEntryDelay:
-      if (cmd.partitionID == null) {
-        throw new Error("partitionID required");
-      }
-      break;
-    case UserCommandCode.ArmWithPIN:
-    case UserCommandCode.Disarm:
-      if (cmd.partitionID == null) {
-        throw new Error("partitionID required");
-      }
-      if (cmd.pin == null) {
-        throw new Error("user pin required");
-      }
-      break;
-    case UserCommandCode.Panic:
-      if (cmd.target == null) {
-        throw new Error("panic target required");
-      }
-      break;
-    default:
-      throw new Error("Unknown user command: " + JSON.stringify(cmd));
   }
 }
