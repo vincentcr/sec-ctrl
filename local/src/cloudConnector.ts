@@ -8,7 +8,8 @@ import * as levelStore from "mqtt-level-store";
 import { Event } from "../../common/event";
 import { fromJSON, UserCommand } from "../../common/userCommand";
 import { CloudConfig } from "./config";
-import logger from "./logger";
+import createLogger from "./logger";
+const logger = createLogger(__filename);
 
 export class CloudConnector {
   private readonly clientId: string;
@@ -17,10 +18,10 @@ export class CloudConnector {
   private readonly emitter: EventEmitter;
   private device?: awsIot.device;
 
-  constructor(config: CloudConfig) {
+  constructor(dataDir: string, config: CloudConfig) {
+    this.dataDir = dataDir;
     this.clientId = config.clientId;
     this.host = config.host;
-    this.dataDir = config.dataDir;
     this.emitter = new EventEmitter();
   }
 
@@ -56,6 +57,7 @@ export class CloudConnector {
       });
     });
   }
+
   private _mkTopic(name: string) {
     return `sec-ctrl/${this.clientId}/${name}`;
   }

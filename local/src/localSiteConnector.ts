@@ -1,9 +1,9 @@
 import { EventEmitter } from "events";
 import { Socket } from "net";
 
-import { ServerCode } from "../../common/codes";
 import { ClientMessage, ServerMessage } from "../../common/message";
-import logger from "./logger";
+import createLogger from "./logger";
+const logger = createLogger(__filename);
 
 const SEP = new Buffer("\r\n");
 

@@ -12,11 +12,11 @@ export interface LocalConfig {
 
 export interface CloudConfig {
   clientId: string;
-  dataDir: string;
   host: string;
 }
 
 export interface Config {
+  dataDir: string;
   cloud: CloudConfig;
   local: LocalConfig;
 }
