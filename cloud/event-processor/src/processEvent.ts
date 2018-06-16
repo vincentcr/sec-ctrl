@@ -16,13 +16,6 @@ import { Zone } from "../../../common/zone";
 
 const dynamodbClient = new AWS.DynamoDB.DocumentClient();
 
-interface Site {
-  readonly thingID: string;
-  readonly partitions: { [id: string]: Partition };
-  readonly zones: { [id: string]: Zone };
-  readonly systemTroubleStatus: string[];
-}
-
 export interface StoredEvent {
   data: {
     event: Event;
@@ -32,7 +25,7 @@ export interface StoredEvent {
   eventID: string;
 }
 
-export async function processRecord(thingID: string, evt: Event) {
+export async function processEvent(thingID: string, evt: Event) {
   switch (evt.type) {
     case EventType.PartitionChange:
       await updatePartition(thingID, evt);

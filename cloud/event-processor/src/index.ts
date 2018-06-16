@@ -1,18 +1,9 @@
 import { Context, DynamoDBStreamEvent } from "aws-lambda";
 import * as AWS from "aws-sdk";
 import { Event } from "../../../common/event";
-import { processRecord } from "./processRecord";
+import { processEvent, StoredEvent } from "./processEvent";
 
 import logger from "./logger";
-
-interface StoredEvent {
-  data: {
-    event: Event;
-    receivedAt: string;
-  };
-  thingID: string;
-  eventID: string;
-}
 
 export async function handler(data: DynamoDBStreamEvent, context: Context) {
   logger.debug("dynamo event = ", data);
@@ -25,12 +16,12 @@ export async function handler(data: DynamoDBStreamEvent, context: Context) {
 }
 
 async function processAll(data: DynamoDBStreamEvent) {
-  for (const evt of parseStreamData(data)) {
-    await processRecord(evt.thingID, evt.data.event);
+  for (const evt of parseDynamoEvent(data)) {
+    await processEvent(evt.thingID, evt.data.event);
   }
 }
 
-function parseStreamData(event: DynamoDBStreamEvent): StoredEvent[] {
+function parseDynamoEvent(event: DynamoDBStreamEvent): StoredEvent[] {
   return event.Records.filter(({ eventName }) => eventName === "INSERT").map(
     ({ dynamodb }) => {
       const img = dynamodb!.NewImage!;
