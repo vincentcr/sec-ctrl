@@ -2,7 +2,8 @@
 
 set -e
 
-ARCHIVE=$( $(dirname $0)/build-lambda.sh )
+
+PKG=$( $(dirname $0)/lambda-package.sh )
 
 if [ -z "$LAMBDA_NAME" ] ; then
   echo "LAMBDA_NAME env var required"
@@ -17,6 +18,6 @@ fi
 aws --profile $AWS_PROFILE \
   lambda update-function-code \
   --function-name $LAMBDA_NAME \
-  --zip-file fileb://$ARCHIVE
+  --zip-file fileb://$PKG
 
-rm $ARCHIVE
+rm $PKG
