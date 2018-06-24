@@ -14,7 +14,6 @@ import { VError } from "verror";
 import { Event } from "../../../common/event";
 import { Partition } from "../../../common/partition";
 import { Zone } from "../../../common/zone";
-import logger from "./logger";
 
 export const enum DBError {
   EmailNotFound = "EmailNotFound",
@@ -103,7 +102,7 @@ export class BaseModel<TItem> {
       return undefined;
     }
 
-    return AWS.DynamoDB.Converter.unmarshall(result.Item) as TItem;
+    return result.Item as TItem;
   }
 
   protected async put(params: {

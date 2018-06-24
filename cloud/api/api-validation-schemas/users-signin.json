@@ -5,19 +5,16 @@
     "body": {
       "type": "object",
       "properties": {
-        "email": {
+        "username": {
           "type": "string",
-          "format": "email"
+          "minLength": 2
         },
         "password": {
           "type": "string",
           "minLength": 6
         }
       },
-      "required": [
-        "email",
-        "password"
-      ],
+      "required": ["username", "password"],
       "additionalProperties": false
     }
   }

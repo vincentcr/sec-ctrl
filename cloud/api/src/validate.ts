@@ -4,11 +4,14 @@ import { promisify } from "util";
 
 import * as Ajv from "ajv";
 import { NextFunction, Request, RequestHandler, Response } from "express";
+import { IMiddleware, IRouterContext } from "koa-router";
 
 const readdir = promisify(fs.readdir);
 const readFile = promisify(fs.readFile);
 
-export default async function initValidators() {
+export type ValidatorBuilder = (schemaName: string) => IMiddleware;
+
+export default async function initValidators(): Promise<ValidatorBuilder> {
   const ajv = new Ajv();
   ajv.addMetaSchema(require("ajv/lib/refs/json-schema-draft-06.json"));
   await loadSchemas(ajv);
@@ -41,22 +44,21 @@ async function loadSchema(schemaPath: string): Promise<[string, object]> {
   return [name, schema];
 }
 
-function validate(ajv: Ajv.Ajv, schemaName: string): RequestHandler {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const { query, body } = req;
+function validate(ajv: Ajv.Ajv, schemaName: string): IMiddleware {
+  return (ctx: IRouterContext, next: () => Promise<any>) => {
+    const { query, body } = ctx.request;
     const valid = ajv.validate(schemaName, { query, body });
     if (valid) {
-      next();
-      return;
+      return next();
     }
 
     const error = ajv.errors![0];
-    res.status(400);
-    res.json({
+    ctx.response.status = 400;
+    ctx.response.body = {
       name: error.propertyName,
       type: error.keyword,
       message: error.message,
       dataPath: error.dataPath
-    });
+    };
   };
 }
