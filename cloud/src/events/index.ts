@@ -3,7 +3,7 @@ import * as AWS from "aws-sdk";
 import { Event } from "../../../common/event";
 import { processEvent, StoredEvent } from "./processEvent";
 
-import logger from "./logger";
+import logger from "../logger";
 
 export async function handler(data: DynamoDBStreamEvent, context: Context) {
   logger.debug("dynamo event = ", data);

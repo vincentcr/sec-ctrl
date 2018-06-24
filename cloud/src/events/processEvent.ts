@@ -1,6 +1,6 @@
 import * as AWS from "aws-sdk";
 
-import logger from "./logger";
+import logger from "../logger";
 
 import {
   Event,

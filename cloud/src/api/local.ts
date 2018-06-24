@@ -1,7 +1,7 @@
 import { VError } from "verror";
 import createApp from "./app";
-import logger, { die } from "./logger";
-import createServices from "./services";
+import logger, { die } from "../logger";
+import createServices from "../services";
 
 const { PORT = 3000 } = process.env;
 

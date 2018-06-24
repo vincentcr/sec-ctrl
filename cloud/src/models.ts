@@ -11,9 +11,9 @@ import { promisify } from "util";
 import * as uuid from "uuid";
 import { VError } from "verror";
 
-import { Event } from "../../../common/event";
-import { Partition } from "../../../common/partition";
-import { Zone } from "../../../common/zone";
+import { Event } from "../../common/event";
+import { Partition } from "../../common/partition";
+import { Zone } from "../../common/zone";
 
 export const enum DBError {
   EmailNotFound = "EmailNotFound",

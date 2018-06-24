@@ -3,8 +3,8 @@ import * as Koa from "koa";
 import * as bodyParser from "koa-bodyparser";
 import * as Router from "koa-router";
 import { IMiddleware } from "koa-router";
-import { Models, SiteRecord, UserRecord } from "./models";
-import { Services } from "./services";
+import { Models, SiteRecord, UserRecord } from "../models";
+import { Services } from "../services";
 import initValidators, { ValidatorBuilder } from "./validate";
 
 interface RouteBuilderParam {
@@ -28,7 +28,7 @@ export default async function createApp(services: Services): Promise<Koa> {
   return app;
 }
 
-async function createMiddlewares({ models, iot }: Services) {
+async function createMiddlewares({ models }: Services) {
   const validators = await initValidators();
   const authorize = mkAuthorize(models);
   const getUserSite = mkGetUserSite(models);

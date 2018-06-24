@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "lint": "tslint --project .",
-    "build": "../../_bin/build",
+    "build": "../_bin/build",
     "clean": "../_bin/clean",
-    "deploy": "AWS_PROFILE=polymatix LAMBDA_NAME=sec-ctrl-api ../_bin/lambda-deploy",
-    "dev": "npx nodemon -x ts-node src/local.ts | npx bunyan",
+    "deploy": "AWS_PROFILE=polymatix LAMBDA_NAME=sec-ctrl ../_bin/lambda-deploy",
+    "dev": "AWS_PROFILE=polymatix npx nodemon -x ts-node src/api/local.ts | npx bunyan",
     "test": "npm run lint"
   },
   "author": "Vincent Côté-Roy",
@@ -42,7 +42,6 @@
     "bcrypt": "^2.0.1",
     "body-parser": "^1.18.3",
     "bunyan": "^1.8.12",
-    "common": "file:../../common",
     "compression": "^1.7.2",
     "cookie-parser": "^1.4.3",
     "cors": "^2.8.4",
