@@ -3,9 +3,32 @@
 set -e
 
 SCRIPT_DIR=$(dirname $0)
-PKG="$(mktemp)-$(date +'%Y%m%d%H%M%S').zip"
+PKG="/out/$(date +'%Y%m%d%H%M%S').zip"
 
-${SCRIPT_DIR}/lambda-build >&2
+# ${SCRIPT_DIR}/lambda-build >&2
 
-zip -q -r $PKG . >&2
-echo $PKG
+# zip -q -r $PKG . >&2
+# echo $PKG
+
+
+# #!/bin/bash
+
+IMG_NAME=lambda-builder
+
+TARGET=${TARGET:-$(pwd)}
+BUILD_CACHE_DIR=~/.docker-build-cache${TARGET}
+BUILD_CMD=${SCRIPT_DIR}/lambda-build
+
+SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
+ROOT_DIR=${SCRIPT_PATH}/../
+REL_TARGET=$(python -c "import os.path; print os.path.relpath('${TARGET}', '${ROOT_DIR}')")
+
+docker run --rm \
+  -v ${TARGET}/..:/build \
+  -v ${BUILD_CACHE_DIR}/node_modules:/build/${REL_TARGET}/node_modules:cached \
+  -v ${BUILD_CACHE_DIR}/out:/out \
+  -w /build/${REL_TARGET} \
+  ${IMG_NAME} \
+  bash -x ${BUILD_CMD} "$PKG"
+
+echo ${BUILD_CACHE_DIR}${PKG}

@@ -1,17 +1,24 @@
 #!/bin/bash
 
-IMG_NAME=lambda-builder
+# IMG_NAME=lambda-builder
 
-BUILD_CMD=${BUILD_CMD:-npm run build}
-TARGET=${TARGET:-$(pwd)}
+# TARGET=${TARGET:-$(pwd)}
+# BUILD_CACHE_DIR=~/.docker-build-cache${TARGET}
+# BUILD_CMD=${BUILD_CMD:-npm run build}
 
-SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
-ROOT_DIR=${SCRIPT_PATH}/../
-REL_TARGET=$(python -c "import os.path; print os.path.relpath('${TARGET}', '${ROOT_DIR}')")
+# SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
+# ROOT_DIR=${SCRIPT_PATH}/../
+# REL_TARGET=$(python -c "import os.path; print os.path.relpath('${TARGET}', '${ROOT_DIR}')")
 
-docker run --rm \
-  -v ${TARGET}/../..:/build \
-  -v ~/.docker-build-cache${TARGET}/node_modules:/build/${REL_TARGET}/node_modules \
-  -w /build/${REL_TARGET} \
-  ${IMG_NAME} \
-  ${BUILD_CMD}
+# docker run --rm \
+#   -v ${TARGET}/..:/build \
+#   -v ${BUILD_CACHE_DIR}/node_modules:/build/${REL_TARGET}/node_modules \
+#   -v ${BUILD_CACHE_DIR}/out:/out
+#   -w /build/${REL_TARGET} \
+#   ${IMG_NAME} \
+#   ${BUILD_CMD}
+
+OUT_FILE=${1:-"-"}
+
+time npm run build >&2
+time zip -q -r $OUT_FILE .
