@@ -10,30 +10,70 @@ jobs:
       # specify the version you desire here
       - image: circleci/node:8.10
 
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/mongo:3.4.4
-
     working_directory: ~/repo
 
     steps:
       - checkout
-
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "cloud/package.json" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
-
-      - run: cd cloud && npm install
-      - run: cd cloud && tsc
-
+            - v1-common-dependencies-{{ checksum "common/package.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-common-dependencies-
+      - run:
+          name: Install NPM dependencies for common
+          command: cd common && npm install
       - save_cache:
           paths:
             - node_modules
-          key: v1-dependencies-{{ checksum "cloud/package.json" }}
+          key: v1-common-dependencies-{{ checksum "common/package.json" }}
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-cloud-dependencies-{{ checksum "cloud/package.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-cloud-dependencies-
+      - run:
+          name: Install NPM dependencies for cloud
+          command: cd cloud && npm install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-cloud-dependencies-{{ checksum "cloud/package.json" }}
+      - run:
+          name: Transpile TypeScript files
+          command: cd cloud && ./node_modules/.bin/tsc
+      - run:
+          name: Build archive
+          command: cd cloud && mkdir out && zip -q -r out/lambda.zip .
+      - persist_to_workspace:
+          root: cloud/out
+          paths:
+            - lambda.zip
 
-      # # run tests!
-      # - run: npm test
+  deploy:
+    docker:
+      - image: circleci/python:2.7
+    working_directory: ~/repo
+    steps:
+      - attach_workspace:
+          at: /tmp/out
+      - run:
+          name: Install awscli
+          command: sudo pip install awscli
+      - run:
+          name: Deploy to S3
+          command: cd cloud && aws lambda update-function-code --function-name sec-ctrl --zip-file fileb:///tmp/out/lambda.zip
+
+
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+      - build
+      - deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
