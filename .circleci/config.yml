@@ -28,6 +28,7 @@ jobs:
           - v1-dependencies-
 
       - run: cd cloud && npm install
+      - run: cd cloud && tsc
 
       - save_cache:
           paths:
