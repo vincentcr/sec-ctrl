@@ -63,7 +63,7 @@ jobs:
           command: sudo pip install awscli
       - run:
           name: Deploy to S3
-          command: cd cloud && aws lambda update-function-code --function-name sec-ctrl --zip-file fileb:///tmp/out/lambda.zip
+          command: aws lambda update-function-code --function-name sec-ctrl --zip-file fileb:///tmp/out/lambda.zip
 
 
 workflows:
