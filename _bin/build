@@ -10,7 +10,6 @@ DEFAULT_EXCLUDES = ['dist', 'node_modules', '.git']
 
 def main():
     args = parse_cmd_line()
-    print args
     copy_src_files(src_dir=args.src_dir, dst_dir=args.dst_dir,
                    excludes=args.exclude)
     compile(args.dst_dir)
@@ -18,8 +17,8 @@ def main():
 
 def parse_cmd_line():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--dst-dir', default='.')
     parser.add_argument('--src-dir', default='.')
-    parser.add_argument('--dst-dir')
     parser.add_argument('--exclude', action='append',
                         default=DEFAULT_EXCLUDES)
     args = parser.parse_args()
@@ -27,11 +26,14 @@ def parse_cmd_line():
 
 
 def copy_src_files(src_dir, dst_dir, excludes):
+    if src_dir == dst_dir:
+        return
+
     src_files = list_src_files(src_dir=src_dir, excludes=excludes + [dst_dir])
     for src_file in src_files:
-        rel_path = os.path.relpath(src_file, src_dir)
-        dirname = os.path.join(dst_dir, os.path.dirname(rel_path))
-        basename = os.path.basename(rel_path)
+        relpath = os.path.relpath(src_file, src_dir)
+        dirname = os.path.join(dst_dir, os.path.dirname(relpath))
+        basename = os.path.basename(relpath)
         dst_file = os.path.join(dirname, basename)
         print 'src_file=', src_file, 'dst_file=', dst_file
         if not os.path.exists(dirname):
@@ -63,8 +65,8 @@ def list_src_files(src_dir, excludes):
 
 def compile(dst_dir):
     os.chdir(dst_dir)
+    subprocess.check_call(['npm', 'install'])
     subprocess.check_call(['tsc'])
-    subprocess.check_call(['npm', 'install', '--production'])
 
 
 main()
