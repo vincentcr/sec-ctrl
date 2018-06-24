@@ -3,7 +3,7 @@
 set -e
 
 
-PKG=$( $(dirname $0)/lambda-package.sh )
+PKG=$( $(dirname $0)/lambda-package )
 
 if [ -z "$LAMBDA_NAME" ] ; then
   echo "LAMBDA_NAME env var required"
