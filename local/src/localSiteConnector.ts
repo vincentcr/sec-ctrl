@@ -12,6 +12,7 @@ export class LocalSiteConnector {
   private readonly hostname: string;
   private readonly socket = new Socket();
   private readonly emitter = new EventEmitter();
+  private connAttempts = 0;
   private buf = Buffer.alloc(0);
 
   constructor(port: number, hostname: string) {
@@ -19,22 +20,44 @@ export class LocalSiteConnector {
     this.hostname = hostname;
   }
 
-  async start() {
+  start() {
     this.socket.on("data", (data: Buffer) => {
       logger.debug("received:", data);
       this.processData(data);
     });
 
-    return new Promise(resolve => {
-      this.socket.connect(
-        this.port,
-        this.hostname,
-        () => {
-          logger.debug(`connected to ${this.hostname}:${this.port}`);
-          resolve();
-        }
-      );
+    this.socket.on("close", () => {
+      logger.warn("socket was closed");
+      this.waitAndReconnect();
     });
+
+    this.socket.on("error", err => {
+      logger.error("Socket error:", err);
+    });
+
+    this.socket.on("connect", () => {
+      this.connAttempts = 0;
+      logger.info(`Connected to ${this.hostname}:${this.port}`);
+    });
+
+    this.connect();
+  }
+
+  private connect() {
+    this.connAttempts += 1;
+    this.socket.connect(
+      this.port,
+      this.hostname
+    );
+  }
+
+  private waitAndReconnect() {
+    const backoff = Math.pow(2, Math.min(16, this.connAttempts));
+    const delay = 1000 + Math.random() * backoff;
+    logger.info(
+      `Disconnected, sleeping for ${delay} millis before attempting reconnect...`
+    );
+    setTimeout(() => this.connect(), delay);
   }
 
   async sendMessage(msg: ClientMessage) {

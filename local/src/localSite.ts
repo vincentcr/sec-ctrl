@@ -24,7 +24,7 @@ export class LocalSite {
 
   async start() {
     this.connector.onMessage(msg => this.processMessage(msg));
-    await this.connector.start();
+    this.connector.start();
 
     setInterval(() => {
       if (this.loggedIn) {
