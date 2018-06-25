@@ -1,14 +1,10 @@
-import * as awsIot from "aws-iot-device-sdk";
-
 import createLogger from "./logger";
 
-import { Event, fromServerMessage } from "../../common/event";
-import { ClientMessage, ServerMessage } from "../../common/message";
+import { fromServerMessage } from "../../common/event";
 import { toClientMessage, UserCommand } from "../../common/userCommand";
 import { CloudConnector } from "./cloudConnector";
 import { loadConfig } from "./config";
 import { LocalSite } from "./localSite";
-import { LocalSiteConnector } from "./localSiteConnector";
 
 const logger = createLogger(__filename);
 
