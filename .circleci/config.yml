@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - checkout
-      # Download and cache dependencies
+      # Download and cache common dependencies
       - restore_cache:
           keys:
             - v1-common-dependencies-{{ checksum "common/package.json" }}
@@ -27,7 +27,7 @@ jobs:
           paths:
             - node_modules
           key: v1-common-dependencies-{{ checksum "common/package.json" }}
-      # Download and cache dependencies
+      # Download and cache cloud dependencies
       - restore_cache:
           keys:
             - v1-cloud-dependencies-{{ checksum "cloud/package.json" }}
