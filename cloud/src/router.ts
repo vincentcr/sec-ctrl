@@ -9,11 +9,14 @@ export function handler(
   context: Context
 ) {
   if ("Records" in event) {
+    // dynamo stream event
     events.handler(event, context);
   } else if ("headers" in event) {
+    // api request
     api.handler(event, context);
   } else {
-    throw new Error("Unexpected event: " + JSON.stringify(event));
+    // not supposed to happen
+    die(new Error("Unexpected event: " + JSON.stringify(event)));
   }
 }
 
