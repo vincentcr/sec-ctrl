@@ -53,16 +53,13 @@ jobs:
 
   deploy:
     docker:
-      - image: circleci/python:2.7
+      - image: cibuilds/aws:latest
     working_directory: ~/repo
     steps:
       - attach_workspace:
           at: /tmp/out
       - run:
-          name: Install awscli
-          command: sudo pip install awscli
-      - run:
-          name: Deploy to S3
+          name: Deploy to Lambda
           command: aws lambda update-function-code --function-name sec-ctrl --zip-file fileb:///tmp/out/lambda.zip
 
 
