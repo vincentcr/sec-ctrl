@@ -1,8 +1,7 @@
-import * as uuid from "uuid";
-
 import { ServerCode } from "./codes";
 import { decodeHexByte, decodeIntCode, encodeIntCode } from "./encodings";
 import { errorCodeDescriptions } from "./errorCode";
+import generateID from "./eventID";
 import { ServerMessage } from "./message";
 import { KeypadLedState, PartitionStatus } from "./partition";
 import { SystemTroubleStatus } from "./systemTroubleStatus";
@@ -204,7 +203,7 @@ function buildSystemErrorEvent(msg: ServerMessage): SystemErrorEvent {
   const errDesc = errorCodeDescriptions[errCode];
   return {
     date: new Date(),
-    id: uuid.v1(),
+    id: generateID(),
     type: EventType.SystemError,
     code: errDesc
   };
@@ -213,7 +212,7 @@ function buildSystemErrorEvent(msg: ServerMessage): SystemErrorEvent {
 function buildInfoEvent(msg: ServerMessage): InfoEvent {
   return {
     date: new Date(),
-    id: uuid.v1(),
+    id: generateID(),
     type: EventType.Info,
     code: ServerCode[msg.code],
     data: msg.data.toString()
@@ -223,7 +222,7 @@ function buildInfoEvent(msg: ServerMessage): InfoEvent {
 function buildTroubleEvent(msg: ServerMessage): TroubleEvent {
   return {
     date: new Date(),
-    id: uuid.v1(),
+    id: generateID(),
     type: EventType.Trouble,
     code: ServerCode[msg.code]
   };
@@ -232,7 +231,7 @@ function buildTroubleEvent(msg: ServerMessage): TroubleEvent {
 function buildAlarmEvent(msg: ServerMessage): AlarmEvent {
   return {
     date: new Date(),
-    id: uuid.v1(),
+    id: generateID(),
     type: EventType.Alarm,
     code: ServerCode[msg.code]
   };
@@ -244,7 +243,7 @@ function buildTroubleStatusEvent(msg: ServerMessage): SystemTroubleStatusEvent {
 
   return {
     date: new Date(),
-    id: uuid.v1(),
+    id: generateID(),
     type: EventType.SystemTroubleStatus,
     status
   };
@@ -258,7 +257,7 @@ function buildPartitionStatusChangeEvent(
 
   return {
     date: new Date(),
-    id: uuid.v1(),
+    id: generateID(),
     type: EventType.PartitionChange,
     changeType: PartitionChangeEventType.Status,
     partitionID,
@@ -276,7 +275,7 @@ function buildPartitionKeypadLedStateChangeEvent(
 
   return {
     date: new Date(),
-    id: uuid.v1(),
+    id: generateID(),
     type: EventType.PartitionChange,
     changeType: PartitionChangeEventType.KeypadLed,
     partitionID,
@@ -293,7 +292,7 @@ function buildPartitionTroubleLedChangeEvent(
 
   return {
     date: new Date(),
-    id: uuid.v1(),
+    id: generateID(),
     type: EventType.PartitionChange,
     changeType: PartitionChangeEventType.TroubleLed,
     partitionID,
@@ -324,7 +323,7 @@ function buildZoneStatusChangeEvent(
 
   return {
     date: new Date(),
-    id: uuid.v1(),
+    id: generateID(),
     type: EventType.ZoneChange,
     zoneID,
     partitionID,
@@ -337,7 +336,7 @@ function buildPartitionEvent(msg: ServerMessage): PartitionEvent {
 
   return {
     date: new Date(),
-    id: uuid.v1(),
+    id: generateID(),
     type: EventType.Partition,
     partitionID,
     code: ServerCode[msg.code]
@@ -350,7 +349,7 @@ function buildUserPartitionEvent(msg: ServerMessage): PartitionEvent {
 
   return {
     date: new Date(),
-    id: uuid.v1(),
+    id: generateID(),
     type: EventType.Partition,
     partitionID,
     userID,
