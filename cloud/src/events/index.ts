@@ -6,7 +6,7 @@ import { SiteEventRecord } from "../models";
 import createServices, { Services } from "../services";
 
 export async function handler(data: DynamoDBStreamEvent, context: Context) {
-  logger.debug("dynamo event = ", data);
+  logger.debug(data, "dynamo event");
 
   const services = await createServices();
 

@@ -1,7 +1,7 @@
 import * as bunyan from "bunyan";
 
 const logger = bunyan.createLogger({
-  name: "api",
+  name: "cloud",
   level: "debug",
   serializers: bunyan.stdSerializers
 });
