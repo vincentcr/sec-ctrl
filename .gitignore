@@ -2,7 +2,7 @@ dist
 node_modules
 tmp*
 *.zip
-mqtt-store
-certs
+data
+config/production.json
 test-iot.js
 *.code-workspace

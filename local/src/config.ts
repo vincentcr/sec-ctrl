@@ -1,6 +1,8 @@
 import * as fs from "fs";
+import * as _ from "lodash";
+import * as path from "path";
 
-const CONFIG_FILE = "./config.json";
+const CONFIG_FOLDER = "./config";
 
 export interface LocalConfig {
   port: number;
@@ -22,6 +24,14 @@ export interface Config {
 }
 
 export function loadConfig(): Config {
-  const json = fs.readFileSync(CONFIG_FILE).toString("utf-8");
+  const defaults = loadFile(path.join(CONFIG_FOLDER, "default.json"));
+  const env = process.env.NODE_ENV || "dev";
+  const envFile = path.join(CONFIG_FOLDER, env + ".json");
+  const envConf = fs.existsSync(envFile) ? loadFile(envFile) : {};
+  return _.merge(defaults, envConf);
+}
+
+function loadFile(fname: string) {
+  const json = fs.readFileSync(fname).toString("utf-8");
   return JSON.parse(json);
 }

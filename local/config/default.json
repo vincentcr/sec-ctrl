@@ -1,0 +1,14 @@
+{
+  "dataDir": "./data",
+  "cloud": {
+    "clientId": "test-sec-ctrl-1",
+    "host": "a1nto8ch8ason0.iot.us-east-1.amazonaws.com"
+  },
+  "local": {
+    "port": 4025,
+    "hostname": "localhost",
+    "password": "mock123",
+    "statusRefreshIntervalMs": 300000,
+    "keepAliveIntervalMs": 30000
+  }
+}
