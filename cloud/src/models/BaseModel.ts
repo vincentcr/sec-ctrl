@@ -5,6 +5,8 @@ import {
 import AWS = require("aws-sdk");
 import { QueryResultPage } from "./types";
 
+const TablePrefix = "secCtrl.";
+
 type DynamoPrimitive = string | number | boolean | Buffer;
 
 type DynamoValue =
@@ -29,7 +31,7 @@ export class BaseModel<TItem> {
     tableName: string
   ) {
     this.dynamodbClient = dynamodbClient;
-    this.tableName = tableName;
+    this.tableName = TablePrefix + tableName;
   }
 
   protected async query(params: {

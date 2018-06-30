@@ -13,7 +13,7 @@ import logger from "../logger";
 
 export class SiteModel extends BaseModel<SiteRecord> {
   constructor(dynamodbClient: AWS.DynamoDB.DocumentClient) {
-    super(dynamodbClient, "secCtrl.sites");
+    super(dynamodbClient, "sites");
   }
 
   async getByThingID(thingID: string): Promise<SiteRecord | undefined> {

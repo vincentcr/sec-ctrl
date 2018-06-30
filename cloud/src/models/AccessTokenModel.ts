@@ -8,7 +8,7 @@ const randomBytes = promisify(crypto.randomBytes);
 
 export class AccessTokenModel extends BaseModel<AccessTokenRecord> {
   constructor(dynamodbClient: AWS.DynamoDB.DocumentClient) {
-    super(dynamodbClient, "secCtrl.accessTokens");
+    super(dynamodbClient, "accessTokens");
   }
 
   async create(userID: string): Promise<AccessTokenRecord> {

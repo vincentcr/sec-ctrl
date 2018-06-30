@@ -10,7 +10,7 @@ interface UserRecordPrivate extends UserRecord {
 
 export class UserModel extends BaseModel<UserRecordPrivate> {
   constructor(dynamodbClient: AWS.DynamoDB.DocumentClient) {
-    super(dynamodbClient, "secCtrl.users");
+    super(dynamodbClient, "users");
   }
 
   async create(params: {

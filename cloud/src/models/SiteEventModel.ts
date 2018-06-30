@@ -3,7 +3,7 @@ import { SiteEventRecord, QueryResultPage } from "./types";
 
 export class SiteEventModel extends BaseModel<SiteEventRecord> {
   constructor(dynamodbClient: AWS.DynamoDB.DocumentClient) {
-    super(dynamodbClient, "secCtrl.events");
+    super(dynamodbClient, "events");
   }
 
   async getByThingID(params: {
