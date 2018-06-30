@@ -13,7 +13,7 @@ export async function handler(data: DynamoDBStreamEvent, context: Context) {
   try {
     await processAll(data, services);
   } catch (err) {
-    logger.debug("failed to process event with payload", data, "\nerror:", err);
+    logger.error({ data, err }, "failed to process event with payload");
   }
 }
 
@@ -28,7 +28,7 @@ function parseDynamoEvent(data: DynamoDBStreamEvent): SiteEventRecord[] {
     ({ dynamodb }) => {
       const img = dynamodb!.NewImage!;
       const evt = AWS.DynamoDB.Converter.unmarshall(img) as SiteEventRecord;
-      logger.debug("evt =>", evt);
+      logger.info(evt, "event record");
       return evt;
     }
   );

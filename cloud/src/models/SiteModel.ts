@@ -64,6 +64,8 @@ export class SiteModel extends BaseModel<SiteRecord> {
   ) {
     const { partitionID } = event;
 
+    logger.debug({ thingID, event }, "updatePartitionFromEvent");
+
     try {
       await this.update({
         Key: { thingID },
@@ -149,7 +151,7 @@ export class SiteModel extends BaseModel<SiteRecord> {
   ) {
     const zone = { zoneID, partitionID, status };
 
-    logger.debug("updateZoneFromEvent:", thingID, zone);
+    logger.debug({ thingID, zone }, "updateZoneFromEvent");
 
     try {
       await this.update({
@@ -181,6 +183,8 @@ export class SiteModel extends BaseModel<SiteRecord> {
     event: SystemTroubleStatusEvent
   ) {
     const { status } = event;
+
+    logger.debug({ thingID, status }, "updateSystemTroubleStatusFromEvent");
 
     await this.update({
       Key: { thingID },
