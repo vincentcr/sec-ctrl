@@ -32,8 +32,10 @@ export class Flags {
       throw new Error(
         "invalid flag bits: " +
           flagBits.toString(2) +
-          "non-zero remainder: " +
-          remainder.toString(2)
+          "; non-zero remainder: " +
+          remainder.toString(2) +
+          "; parsed flags: " +
+          JSON.stringify(flags)
       );
     }
 
