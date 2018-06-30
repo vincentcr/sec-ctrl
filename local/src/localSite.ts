@@ -4,6 +4,7 @@ import { ClientCode, ServerCode } from "../../common/codes";
 import { ClientMessage, ServerMessage } from "../../common/message";
 import { LocalConfig } from "./config";
 import { LocalSiteConnector } from "./localSiteConnector";
+import createLogger, { Logger } from "./logger";
 import { getLoginRes, LoginRes } from "./loginRes";
 
 export class LocalSite {
@@ -13,6 +14,7 @@ export class LocalSite {
   private readonly statusRefreshIntervalMs: number;
   private readonly keepAliveIntervalMs: number;
   private loggedIn: boolean = false;
+  private readonly logger: Logger;
 
   constructor(config: LocalConfig) {
     this.password = config.password;
@@ -20,6 +22,9 @@ export class LocalSite {
     this.connector = new LocalSiteConnector(config.port, config.hostname);
     this.statusRefreshIntervalMs = config.statusRefreshIntervalMs;
     this.keepAliveIntervalMs = config.keepAliveIntervalMs;
+    this.logger = createLogger(__filename, {
+      tpiServer: config.hostname + ":" + config.port
+    });
   }
 
   async start() {
@@ -44,6 +49,7 @@ export class LocalSite {
   }
 
   private processMessage(msg: ServerMessage) {
+    this.logger.debug("received", msg.toString());
     switch (msg.code) {
       case ServerCode.LoginRes:
         this.processLoginRequest(msg);
@@ -72,7 +78,7 @@ export class LocalSite {
       case LoginRes.LoginRequest:
         const loginMsg = new ClientMessage(
           ClientCode.NetworkLogin,
-          Buffer.from(this.password),
+          Buffer.from(this.password)
         );
         this.sendMessage(loginMsg);
         break;

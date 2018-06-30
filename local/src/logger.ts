@@ -8,7 +8,12 @@ const logger = bunyan.createLogger({
   serializers: bunyan.stdSerializers
 });
 
-export default function createLogger(fname: string) {
+export type Logger = bunyan;
+
+export default function createLogger(
+  fname: string,
+  otherProps: any = {}
+): bunyan {
   const { name } = path.parse(fname);
-  return logger.child({ module: name });
+  return logger.child({ module: name, ...otherProps });
 }

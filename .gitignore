@@ -3,6 +3,6 @@ node_modules
 tmp*
 *.zip
 data
-config/production.json
+local/config/production.json
 test-iot.js
 *.code-workspace

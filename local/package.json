@@ -4,7 +4,7 @@
   "description": "sec-ctrl local daemon",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon --watch 'src/**/*.ts' --ignore 'src/**/*.spec.ts' --exec 'ts-node' src/index.ts | bunyan",
+    "dev": "nodemon --watch 'src/**/*.ts' --watch '../common/**/*.ts' --watch 'package.json' --watch config.json --ignore 'src/**/*.spec.ts' --exec 'ts-node' src/index.ts | bunyan",
     "build": "tsc",
     "lint": "tslint --project .",
     "test": "npm run lint"
@@ -15,6 +15,7 @@
     "@types/aws-iot-device-sdk": "^2.1.1",
     "@types/bunyan": "^1.8.4",
     "@types/date-fns": "^2.6.0",
+    "@types/lodash": "^4.14.110",
     "@types/node": "^10.1.2",
     "@types/rsmq": "^0.3.27",
     "prettier": "^1.13.4",
@@ -32,7 +33,6 @@
     "mqtt-level-store": "^2.0.0",
     "nodemon": "^1.17.5",
     "rsmq": "^0.8.3",
-    "rsmq-promise": "^1.0.1",
-    "uuid": "^3.2.1"
+    "rsmq-promise": "^1.0.1"
   }
 }

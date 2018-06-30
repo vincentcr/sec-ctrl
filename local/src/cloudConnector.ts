@@ -2,26 +2,26 @@ import { EventEmitter } from "events";
 import * as path from "path";
 
 import * as awsIot from "aws-iot-device-sdk";
-import * as dateFns from "date-fns";
 import * as levelStore from "mqtt-level-store";
 
 import { Event } from "../../common/event";
 import { fromJSON, UserCommand } from "../../common/userCommand";
 import { CloudConfig } from "./config";
-import createLogger from "./logger";
-const logger = createLogger(__filename);
+import createLogger, { Logger } from "./logger";
 
 export class CloudConnector {
   private readonly clientId: string;
   private readonly host: string;
   private readonly dataDir: string;
   private readonly emitter: EventEmitter;
+  private readonly logger: Logger;
   private device?: awsIot.device;
 
   constructor(dataDir: string, config: CloudConfig) {
-    this.dataDir = dataDir;
+    this.dataDir = path.join(dataDir, config.clientId);
     this.clientId = config.clientId;
     this.host = config.host;
+    this.logger = createLogger(__filename, { thingID: config.clientId });
     this.emitter = new EventEmitter();
   }
 
@@ -39,14 +39,14 @@ export class CloudConnector {
     });
 
     this.device.on("connect", () => {
-      logger.debug("connection established");
+      this.logger.info("connection established");
       this.device!.subscribe(this._mkTopic("commands"));
     });
     this.device.on("close", () => {
-      logger.debug("connection closed");
+      this.logger.info("connection closed");
     });
     this.device.on("error", err => {
-      logger.debug("connection error:", err);
+      this.logger.error("connection error:", err);
     });
 
     this.device.on("message", this._parseIncomingMessage.bind(this));
@@ -66,23 +66,25 @@ export class CloudConnector {
     if (this.device == null) {
       throw new Error("device not connected. call start() first");
     }
+    this.logger.debug(evt, "publish");
     this.device.publish(
       this._mkTopic("events"),
       JSON.stringify(evt),
       { qos: 1 },
       err => {
         if (err != null) {
-          logger.debug("failed to publish message: ", err);
+          this.logger.debug("failed to publish message: ", err);
         }
       }
     );
   }
 
   _parseIncomingMessage(topic: string, payload: Buffer) {
-    logger.debug("incoming message: ", topic, payload);
+    this.logger.debug({ topic, payload }, "incoming message");
 
     if (topic !== this._mkTopic("commands")) {
-      logger.debug("received unexpected message:", topic, payload);
+      this.logger.error({ topic, payload }, "received unexpected message");
+      return;
     }
 
     const cmd = fromJSON(payload.toString());

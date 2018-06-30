@@ -12,12 +12,12 @@ async function main() {
   logger.debug("starting");
 
   const config = loadConfig();
+  logger.debug(config, "config");
   const localSite = new LocalSite(config.local);
   const cloudConnector = new CloudConnector(config.dataDir, config.cloud);
 
   localSite.onMessage(msg => {
     const evt = fromServerMessage(msg);
-    logger.debug("[local] received msg:", msg, "=>", evt);
     cloudConnector.publishEvent(evt);
   });
 
