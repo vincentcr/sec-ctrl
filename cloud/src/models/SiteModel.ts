@@ -1,5 +1,5 @@
 import { BaseModel } from "./BaseModel";
-import { SiteRecord, DBError } from "./types";
+import { SiteRecord } from "./types";
 import { VError } from "verror";
 import {
   ZoneChangeEvent,
@@ -10,6 +10,7 @@ import {
   EventType
 } from "../../../common/event";
 import logger from "../logger";
+import { SiteAlreadyClaimedError } from "../errors";
 
 export class SiteModel extends BaseModel<SiteRecord> {
   constructor(dynamodbClient: AWS.DynamoDB.DocumentClient) {
@@ -38,10 +39,7 @@ export class SiteModel extends BaseModel<SiteRecord> {
       if (err.code !== "ConditionalCheckFailedException") {
         throw err;
       } else {
-        throw new VError(
-          { name: DBError.SiteAlreadyClaimed },
-          "site has already been claimed"
-        );
+        throw new SiteAlreadyClaimedError();
       }
     }
   }

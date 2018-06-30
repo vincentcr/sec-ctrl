@@ -2,12 +2,6 @@ import { Partition } from "../../../common/partition";
 import { Zone } from "../../../common/zone";
 import { Event } from "../../../common/event";
 
-export const enum DBError {
-  EmailNotFound = "EmailNotFound",
-  PasswordMismatch = "PasswordMismatch",
-  SiteAlreadyClaimed = "SiteAlreadyClaimed"
-}
-
 export interface QueryResultPage<T> {
   readonly items: T[];
   readonly cursor?: object;

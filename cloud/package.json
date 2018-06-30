@@ -27,6 +27,7 @@
     "@types/koa": "^2.0.46",
     "@types/koa-bodyparser": "^4.2.0",
     "@types/koa-router": "^7.0.28",
+    "@types/lodash": "^4.14.110",
     "@types/node": "^10.3.1",
     "@types/uuid": "^3.4.3",
     "@types/verror": "^1.10.3",
@@ -52,6 +53,7 @@
     "koa-cookie": "^1.0.0",
     "koa-cookie-parser": "^1.0.0",
     "koa-router": "^7.4.0",
+    "lodash": "^4.17.10",
     "uuid": "^3.2.1",
     "verror": "^1.10.0"
   }

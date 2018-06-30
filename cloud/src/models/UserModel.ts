@@ -1,8 +1,14 @@
 import * as uuid from "uuid";
 import * as bcrypt from "bcrypt";
-import { UserRecord, DBError } from "./types";
+import { UserRecord } from "./types";
 import { BaseModel } from "./BaseModel";
 import { VError } from "verror";
+import {
+  UserAlreadyExistsError,
+  IDNotFoundError,
+  UsernameNotFoundError,
+  PasswordMismatchError
+} from "../errors";
 
 interface UserRecordPrivate extends UserRecord {
   readonly hashedPassword: string;
@@ -24,11 +30,19 @@ export class UserModel extends BaseModel<UserRecordPrivate> {
       id: uuid.v4(),
       username: params.username
     };
-    await this.put({
-      item: { ...user, hashedPassword },
-      condition: "attribute_not_exists(username)"
-    });
-    return user;
+    try {
+      await this.put({
+        item: { ...user, hashedPassword },
+        condition: "attribute_not_exists(username)"
+      });
+      return user;
+    } catch (err) {
+      if (err.code === "ConditionalCheckFailedException") {
+        throw new UserAlreadyExistsError();
+      } else {
+        throw new VError({ cause: err }, "unexpected db error");
+      }
+    }
   }
 
   async getByID(id: string): Promise<UserRecord | undefined> {
@@ -41,10 +55,7 @@ export class UserModel extends BaseModel<UserRecordPrivate> {
     });
 
     if (res.items.length === 0) {
-      throw new VError(
-        { name: DBError.EmailNotFound },
-        "user with specified id not found"
-      );
+      throw new IDNotFoundError();
     }
 
     const [privateUser] = res.items;
@@ -65,10 +76,7 @@ export class UserModel extends BaseModel<UserRecordPrivate> {
 
     const privateUser = await this.get({ username });
     if (privateUser == null) {
-      throw new VError(
-        { name: DBError.EmailNotFound },
-        "user with specified username not found"
-      );
+      throw new UsernameNotFoundError();
     }
 
     const validPassword = await bcrypt.compare(
@@ -76,10 +84,7 @@ export class UserModel extends BaseModel<UserRecordPrivate> {
       privateUser.hashedPassword
     );
     if (!validPassword) {
-      throw new VError(
-        { name: DBError.PasswordMismatch },
-        "the password did not match"
-      );
+      throw new PasswordMismatchError();
     }
 
     return UserModel.toPublicUser(privateUser);

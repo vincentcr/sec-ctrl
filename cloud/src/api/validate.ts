@@ -5,6 +5,8 @@ import { promisify } from "util";
 import * as Ajv from "ajv";
 import { NextFunction, Request, RequestHandler, Response } from "express";
 import { IMiddleware, IRouterContext } from "koa-router";
+import { ValidationError } from "../errors";
+import { MediaStore } from "aws-sdk";
 
 const readdir = promisify(fs.readdir);
 const readFile = promisify(fs.readFile);
@@ -53,12 +55,10 @@ function validate(ajv: Ajv.Ajv, schemaName: string): IMiddleware {
     }
 
     const error = ajv.errors![0];
-    ctx.response.status = 400;
-    ctx.response.body = {
-      name: error.propertyName,
-      type: error.keyword,
-      message: error.message,
-      dataPath: error.dataPath
-    };
+
+    throw new ValidationError(
+      { dataPath: error.dataPath, type: error.keyword },
+      error.message
+    );
   };
 }
