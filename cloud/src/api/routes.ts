@@ -46,7 +46,6 @@ function setupUsersRoutes({ services, app, middlewares }: RouteBuilderParam) {
   });
 
   router.post("/signin", validators("users-signin"), async ctx => {
-    throw new Error("boom");
     const user = await models.Users.authenticate(ctx.request.body);
     const accessToken = await models.AccessTokens.create(user.id);
     ctx.response.body = accessToken;
