@@ -1,6 +1,7 @@
 import * as Koa from "koa";
 import * as _ from "lodash";
 import * as bodyParser from "koa-bodyparser";
+import * as cors from "@koa/cors";
 import { VError } from "verror";
 
 import { Services } from "../services";
@@ -10,6 +11,7 @@ import { setupMiddlewares } from "./middlewares";
 
 export default async function createApp(services: Services): Promise<Koa> {
   const app = new Koa();
+  app.use(cors());
   app.use(bodyParser());
   app.use(errorMiddleware);
   app.on("error", errorHandler);

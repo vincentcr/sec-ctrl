@@ -38,6 +38,7 @@
     "typescript": "^2.9.1"
   },
   "dependencies": {
+    "@koa/cors": "^2.2.1",
     "ajv": "^6.5.0",
     "aws-serverless-express": "^3.2.0",
     "bcrypt": "^2.0.1",
