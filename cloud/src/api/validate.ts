@@ -14,7 +14,7 @@ const readFile = promisify(fs.readFile);
 export type ValidatorBuilder = (schemaName: string) => IMiddleware;
 
 export default async function initValidators(): Promise<ValidatorBuilder> {
-  const ajv = new Ajv();
+  const ajv = new Ajv({ coerceTypes: true });
   ajv.addMetaSchema(require("ajv/lib/refs/json-schema-draft-06.json"));
   await loadSchemas(ajv);
   return (schemaName: string) => validate(ajv, schemaName);
