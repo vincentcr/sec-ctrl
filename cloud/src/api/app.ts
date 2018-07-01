@@ -13,6 +13,7 @@ export default async function createApp(services: Services): Promise<Koa> {
   const app = new Koa();
   app.use(cors());
   app.use(bodyParser());
+  app.use(requestLogger);
   app.use(errorMiddleware);
   app.on("error", errorHandler);
 
@@ -20,6 +21,21 @@ export default async function createApp(services: Services): Promise<Koa> {
   await setupRoutes({ services, app, middlewares });
 
   return app;
+}
+
+async function requestLogger(ctx: Koa.Context, next: () => Promise<any>) {
+  await next();
+  const date = new Date();
+  const userID = ctx.state.user && ctx.state.user.id;
+  const { req, res } = ctx;
+  logger.info(
+    { req, res, userID, date },
+    "%s %s HTTP/%s => %s",
+    req.method,
+    req.url,
+    req.httpVersion,
+    res.statusCode
+  );
 }
 
 async function errorMiddleware(ctx: Koa.Context, next: () => Promise<any>) {
