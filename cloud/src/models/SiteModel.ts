@@ -23,23 +23,27 @@ export class SiteModel extends BaseModel<SiteRecord> {
 
   async claim(params: { thingID: string; claimedByID: string }): Promise<void> {
     const { thingID, claimedByID } = params;
+    const req = {
+      Key: { thingID },
+      UpdateExpression: "SET #claimedByID = :claimedByID",
+      ExpressionAttributeNames: {
+        "#claimedByID": "claimedByID"
+      },
+      ExpressionAttributeValues: {
+        ":claimedByID": claimedByID
+      },
+      ConditionExpression: "attribute_not_exists(#claimedByID)"
+    };
     try {
-      await this.update({
-        Key: { thingID },
-        UpdateExpression: "SET #claimedByID = :claimedByID",
-        ExpressionAttributeNames: {
-          "#claimedByID": "claimedByID"
-        },
-        ExpressionAttributeValues: {
-          ":claimedByID": claimedByID
-        },
-        ConditionExpression: "attribute_not_exists(#claimedByID)"
-      });
+      await this.update(req);
     } catch (err) {
-      if (err.code !== "ConditionalCheckFailedException") {
-        throw err;
-      } else {
+      if (err.code === "ConditionalCheckFailedException") {
         throw new SiteAlreadyClaimedError();
+      } else {
+        throw new VError(
+          { cause: err, info: req },
+          "unexpected db error in claim"
+        );
       }
     }
   }
