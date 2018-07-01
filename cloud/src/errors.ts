@@ -13,46 +13,46 @@ export class ValidationError extends VError {
 }
 
 export class IDNotFoundError extends VError {
-  constructor() {
-    super(
-      { name: "IDNotFound", info: { httpStatusCode: 404 } },
-      "The ID does not exist"
-    );
+  constructor(reason = "The ID does not exist") {
+    super({ name: "IDNotFound", info: { httpStatusCode: 404 } }, reason);
   }
 }
 
 export class UsernameNotFoundError extends VError {
-  constructor() {
-    super(
-      { name: "UsernameNotFound", info: { httpStatusCode: 422 } },
-      "The username was not found"
-    );
+  constructor(reason = "The user with specified name was not found") {
+    super({ name: "UsernameNotFound", info: { httpStatusCode: 422 } }, reason);
   }
 }
 
 export class PasswordMismatchError extends VError {
-  constructor() {
-    super(
-      { name: "PasswordMismatch", info: { httpStatusCode: 401 } },
-      "The password did not match"
-    );
+  constructor(reason = "The password did not match") {
+    super({ name: "PasswordMismatch", info: { httpStatusCode: 401 } }, reason);
   }
 }
 
 export class SiteAlreadyClaimedError extends VError {
-  constructor() {
+  constructor(reason = "The site was already claimed") {
     super(
       { name: "SiteAlreadyClaimed", info: { httpStatusCode: 409 } },
-      "The site was already claimed"
+      reason
     );
   }
 }
 
+export class SiteDoesNotExistError extends VError {
+  constructor(reason = "The site does not exist") {
+    super({ name: "SiteDoesNotExist", info: { httpStatusCode: 404 } }, reason);
+  }
+}
+
 export class UserAlreadyExistsError extends VError {
-  constructor() {
-    super(
-      { name: "UserAlreadyExists", info: { httpStatusCode: 409 } },
-      "A user with the same username already exists"
-    );
+  constructor(reason = "A user with the same username already exists") {
+    super({ name: "UserAlreadyExists", info: { httpStatusCode: 409 } }, reason);
+  }
+}
+
+export class UserNotAuthorizedError extends VError {
+  constructor(reason = "The user is not authorized here") {
+    super({ name: "UserNotAuthorized", info: { httpStatusCode: 401 } }, reason);
   }
 }
