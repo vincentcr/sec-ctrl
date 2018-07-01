@@ -7,8 +7,9 @@ import {
   UserAlreadyExistsError,
   IDNotFoundError,
   UsernameNotFoundError,
-  PasswordMismatchError
+  InvalidCredentialsError
 } from "../errors";
+import logger from "../logger";
 
 interface UserRecordPrivate extends UserRecord {
   readonly hashedPassword: string;
@@ -84,7 +85,7 @@ export class UserModel extends BaseModel<UserRecordPrivate> {
       privateUser.hashedPassword
     );
     if (!validPassword) {
-      throw new PasswordMismatchError();
+      throw new InvalidCredentialsError();
     }
 
     return UserModel.toPublicUser(privateUser);

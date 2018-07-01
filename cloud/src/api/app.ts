@@ -11,14 +11,15 @@ import { setupMiddlewares } from "./middlewares";
 
 export default async function createApp(services: Services): Promise<Koa> {
   const app = new Koa();
+  const middlewares = await setupMiddlewares(services);
   app.use(cors());
   app.use(bodyParser());
   app.use(requestLogger);
   app.use(errorMiddleware);
+  app.use(middlewares.authenticate);
   app.on("error", errorHandler);
 
-  const middlewares = await setupMiddlewares(services);
-  await setupRoutes({ services, app, middlewares });
+  setupRoutes({ services, app, middlewares });
 
   return app;
 }

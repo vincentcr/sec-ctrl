@@ -1,58 +1,65 @@
-import { Models, UserRecord } from "../models";
-import { IMiddleware } from "koa-router";
+import { UserRecord } from "../models";
 import * as Router from "koa-router";
-import initValidators from "./validate";
+import initValidators, { ValidatorBuilder } from "./validate";
 import { Services } from "../services";
 import { Context } from "koa";
+import {
+  SiteDoesNotExistError,
+  UserNotAuthorizedError,
+  InvalidCredentialsError
+} from "../errors";
+import { IMiddleware } from "koa-router";
+import logger from "../logger";
 
-export async function setupMiddlewares({ models }: Services) {
+export type Middlewares = {
+  validators: ValidatorBuilder;
+  authenticate: IMiddleware;
+  authorize: IMiddleware;
+  getClaimedSite: IMiddleware;
+};
+
+export async function setupMiddlewares({
+  models
+}: Services): Promise<Middlewares> {
   const validators = await initValidators();
-  const authorize = mkAuthorize(models);
-  const getUserSite = mkGetUserSite(models);
 
-  return { authorize, validators, getUserSite };
-}
+  const middlewares = {
+    validators,
+    async getClaimedSite(ctx: Router.IRouterContext, next: () => Promise<any>) {
+      const user = ctx.state.user as UserRecord;
+      const site = await models.Sites.getByThingID(ctx.params.thingID);
+      if (site == null || site.claimedByID !== user.id) {
+        throw new SiteDoesNotExistError();
+      }
 
-function mkGetUserSite(models: Models): IMiddleware {
-  async function getUserSite(
-    ctx: Router.IRouterContext,
-    next: () => Promise<any>
-  ) {
-    const user = ctx.state.user as UserRecord;
-    const site = await models.Sites.getByThingID(ctx.params.thingID);
-    if (site == null || site.claimedByID !== user.id) {
-      ctx.response.status = 404;
-      ctx.response.body = { reason: "unknown site" };
-      return;
-    }
+      ctx.state.site = site;
+      return next();
+    },
 
-    ctx.state.site = site;
-    next();
-  }
-  return getUserSite;
-}
+    async authenticate(ctx: Router.IRouterContext, next: () => Promise<any>) {
+      const tok = findRequestAuthToken(ctx);
+      if (tok == null) {
+        return next();
+      }
 
-function mkAuthorize(models: Models): IMiddleware {
-  async function authenticate(
-    ctx: Router.IRouterContext,
-    next: () => Promise<any>
-  ) {
-    const tok = findRequestAuthToken(ctx);
-    if (tok == null) {
+      const userID = await models.AccessTokens.authenticate(tok);
+      if (userID == null) {
+        throw new InvalidCredentialsError("invalid token");
+      }
+
+      ctx.state.user = await models.Users.getByID(userID);
+      return next();
+    },
+
+    async authorize(ctx: Router.IRouterContext, next: () => Promise<any>) {
+      if (ctx.state.user == null) {
+        throw new UserNotAuthorizedError();
+      }
       return next();
     }
+  };
 
-    const userID = await models.AccessTokens.authenticate(tok);
-    if (userID == null) {
-      ctx.response.status = 401;
-      ctx.response.body = { reason: "invalid access token" };
-      return;
-    }
-
-    ctx.state.user = await models.Users.getByID(userID);
-    return next();
-  }
-  return authenticate;
+  return middlewares;
 }
 
 function findRequestAuthToken(ctx: Context): string | undefined {

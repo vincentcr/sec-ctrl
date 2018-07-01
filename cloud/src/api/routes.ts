@@ -1,23 +1,18 @@
 import * as dateFns from "date-fns";
 import * as Koa from "koa";
 import { Services } from "../services";
-import { ValidatorBuilder } from "./validate";
-import { IMiddleware } from "koa-router";
 import * as Router from "koa-router";
 import { SiteRecord } from "../models";
-import { setupMiddlewares } from "./middlewares";
+import { Middlewares } from "./middlewares";
+import logger from "../logger";
 
 interface RouteBuilderParam {
   services: Services;
   app: Koa;
-  middlewares: {
-    validators: ValidatorBuilder;
-    authorize: IMiddleware;
-    getUserSite: IMiddleware;
-  };
+  middlewares: Middlewares;
 }
 
-export async function setupRoutes(params: RouteBuilderParam) {
+export function setupRoutes(params: RouteBuilderParam) {
   setupRootRoutes(params);
   setupUsersRoutes(params);
   setupSitesRoutes(params);
@@ -59,7 +54,7 @@ function setupUsersRoutes({ services, app, middlewares }: RouteBuilderParam) {
 
 function setupSitesRoutes({ services, app, middlewares }: RouteBuilderParam) {
   const { models } = services;
-  const { authorize, validators, getUserSite } = middlewares;
+  const { authorize, validators, getClaimedSite } = middlewares;
 
   const router = new Router({ prefix: "/sites" });
   router.use(authorize);
@@ -71,14 +66,14 @@ function setupSitesRoutes({ services, app, middlewares }: RouteBuilderParam) {
     ctx.response.status = 204;
   });
 
-  router.get("/:thingID", getUserSite, async ctx => {
+  router.get("/:thingID", getClaimedSite, async ctx => {
     ctx.response.body = ctx.state.site;
   });
 
   router.post(
     "/:thingID/command",
     validators("sites-thingID-command"),
-    getUserSite,
+    getClaimedSite,
     async ctx => {
       const validUntil = dateFns.addSeconds(new Date(), 30);
       const cmd = { validUntil, ...ctx.request.body };
@@ -96,7 +91,7 @@ function setupSitesRoutes({ services, app, middlewares }: RouteBuilderParam) {
   router.get(
     "/:thingID/events",
     validators("sites-thingID-events"),
-    getUserSite,
+    getClaimedSite,
     async ctx => {
       const { thingID } = ctx.state.site;
 

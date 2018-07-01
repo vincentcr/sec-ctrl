@@ -24,7 +24,7 @@ export class UsernameNotFoundError extends VError {
   }
 }
 
-export class PasswordMismatchError extends VError {
+export class InvalidCredentialsError extends VError {
   constructor(reason = "The password did not match") {
     super({ name: "PasswordMismatch", info: { httpStatusCode: 401 } }, reason);
   }
