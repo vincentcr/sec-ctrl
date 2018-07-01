@@ -53,17 +53,13 @@ export class BaseModel<TItem> {
       exclusiveStartKey
     } = params;
 
-    const valueMap =
-      expressionAttributeValues != null
-        ? AWS.DynamoDB.Converter.marshall(expressionAttributeValues)
-        : undefined;
+      ExpressionAttributeValues: expressionAttributeValues,
 
     const queryOutput = await this.dynamodbClient
       .query({
         TableName: this.tableName,
         IndexName: indexName,
         KeyConditionExpression: keyConditionExpression,
-        ExpressionAttributeValues: valueMap,
         ExpressionAttributeNames: expressionAttributeNames,
         ExclusiveStartKey: exclusiveStartKey,
         ScanIndexForward: scanIndexForward,
@@ -75,9 +71,7 @@ export class BaseModel<TItem> {
       return { items: [] };
     }
 
-    const items = queryOutput.Items.map(
-      it => AWS.DynamoDB.Converter.unmarshall(it) as TItem
-    );
+    const items = queryOutput.Items as TItem[];
 
     return { items, cursor: queryOutput.LastEvaluatedKey };
   }
