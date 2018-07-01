@@ -10,7 +10,7 @@ import {
   EventType
 } from "../../../common/event";
 import logger from "../logger";
-import { SiteAlreadyClaimedError } from "../errors";
+import { SiteAlreadyClaimedError, SiteDoesNotExistError } from "../errors";
 
 export class SiteModel extends BaseModel<SiteRecord> {
   constructor(dynamodbClient: AWS.DynamoDB.DocumentClient) {
@@ -23,6 +23,11 @@ export class SiteModel extends BaseModel<SiteRecord> {
 
   async claim(params: { thingID: string; claimedByID: string }): Promise<void> {
     const { thingID, claimedByID } = params;
+
+    if ((await this.getByThingID(thingID)) == null) {
+      throw new SiteDoesNotExistError();
+    }
+
     const req = {
       Key: { thingID },
       UpdateExpression: "SET #claimedByID = :claimedByID",
