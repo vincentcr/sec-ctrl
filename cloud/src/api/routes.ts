@@ -105,7 +105,7 @@ function setupSitesRoutes({ services, app, middlewares }: RouteBuilderParam) {
         cursor = JSON.parse(ctx.query.cursor);
       }
 
-      const results = models.SiteEvents.getByThingID({
+      const results = await models.SiteEvents.getByThingID({
         thingID,
         limit,
         cursor
