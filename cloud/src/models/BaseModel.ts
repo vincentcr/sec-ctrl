@@ -4,6 +4,7 @@ import {
 } from "aws-sdk/clients/dynamodb";
 import AWS = require("aws-sdk");
 import { QueryResultPage } from "./types";
+import { VError } from "verror";
 
 const TablePrefix = "secCtrl.";
 
@@ -53,19 +54,26 @@ export class BaseModel<TItem> {
       exclusiveStartKey
     } = params;
 
+    const query = {
+      TableName: this.tableName,
+      IndexName: indexName,
+      KeyConditionExpression: keyConditionExpression,
       ExpressionAttributeValues: expressionAttributeValues,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExclusiveStartKey: exclusiveStartKey,
+      ScanIndexForward: scanIndexForward,
+      Limit: limit
+    };
 
     const queryOutput = await this.dynamodbClient
-      .query({
-        TableName: this.tableName,
-        IndexName: indexName,
-        KeyConditionExpression: keyConditionExpression,
-        ExpressionAttributeNames: expressionAttributeNames,
-        ExclusiveStartKey: exclusiveStartKey,
-        ScanIndexForward: scanIndexForward,
-        Limit: limit
-      })
-      .promise();
+      .query(query)
+      .promise()
+      .catch(err => {
+        throw new VError(
+          { cause: err, info: { query } },
+          "Query error on " + this.tableName
+        );
+      });
 
     if (queryOutput.Items == null) {
       return { items: [] };
@@ -77,15 +85,21 @@ export class BaseModel<TItem> {
   }
 
   protected async get(key: any): Promise<TItem | undefined> {
-    const result = await this.dynamodbClient
-      .get({ TableName: this.tableName, Key: key })
-      .promise();
+    const req = { TableName: this.tableName, Key: key };
+    try {
+      const result = await this.dynamodbClient.get(req).promise();
 
-    if (result.Item == null) {
-      return undefined;
+      if (result.Item == null) {
+        return undefined;
+      }
+
+      return result.Item as TItem;
+    } catch (err) {
+      throw new VError(
+        { cause: err, info: { req } },
+        "Failed to get item from " + this.tableName
+      );
     }
-
-    return result.Item as TItem;
   }
 
   protected async put(params: {
