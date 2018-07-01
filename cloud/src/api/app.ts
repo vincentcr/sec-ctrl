@@ -67,8 +67,10 @@ function errorHandler(err: Error, ctx: Koa.Context) {
 
   const level = ctx.state.isPublicErr ? "info" : "error";
 
+  const errInfo = VError.info(err);
+
   logger[level](
-    { req: ctx.request, err, userID, resp: ctx.response },
+    { req: ctx.request, err, errInfo, userID, resp: ctx.response },
     "request failed"
   );
 }
