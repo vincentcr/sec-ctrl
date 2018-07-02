@@ -4,7 +4,7 @@ import * as path from "path";
 import * as awsIot from "aws-iot-device-sdk";
 import * as levelStore from "mqtt-level-store";
 
-import { SiteEvent } from "../../common/event";
+import { SiteEvent } from "../../common/siteEvent";
 import { fromJSON, UserCommand } from "../../common/userCommand";
 import { CloudConfig } from "./config";
 import createLogger, { Logger } from "./logger";

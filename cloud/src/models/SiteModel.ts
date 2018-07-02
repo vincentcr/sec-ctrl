@@ -7,7 +7,7 @@ import {
   SystemTroubleStatusEvent,
   SiteEvent,
   EventType
-} from "../../../common/event";
+} from "../../../common/siteEvent";
 import logger from "../logger";
 import { SiteAlreadyClaimedError, SiteDoesNotExistError } from "../errors";
 import { Site } from "../../../common/site";

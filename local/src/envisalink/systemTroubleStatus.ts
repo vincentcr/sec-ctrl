@@ -1,4 +1,4 @@
-import { Flags } from "./flags";
+import Flags from "./flags";
 
 export const SystemTroubleStatus = new Flags({
   "Service Required": 1 << 0,

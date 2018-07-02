@@ -1,8 +1,8 @@
 import { EventEmitter } from "events";
 
-import { ClientCode, ServerCode } from "../../common/codes";
-import { ClientMessage, ServerMessage } from "../../common/message";
 import { LocalConfig } from "./config";
+import { ClientCode, ServerCode } from "./envisalink/codes";
+import { ClientMessage, ServerMessage } from "./envisalink/message";
 import { LocalSiteConnector } from "./localSiteConnector";
 import createLogger, { Logger } from "./logger";
 import { getLoginRes, LoginRes } from "./loginRes";

@@ -1,9 +1,9 @@
 import createLogger from "./logger";
 
-import { fromServerMessage } from "../../common/event";
-import { toClientMessage, UserCommand } from "../../common/userCommand";
 import { CloudConnector } from "./cloudConnector";
 import { loadConfig } from "./config";
+import * as clientMessageBuilder from "./envisalink/clientMessageBuilder";
+import * as eventBuilder from "./envisalink/eventBuilder";
 import { LocalSite } from "./localSite";
 
 const logger = createLogger(__filename);
@@ -17,13 +17,13 @@ async function main() {
   const cloudConnector = new CloudConnector(config.dataDir, config.cloud);
 
   localSite.onMessage(msg => {
-    const evt = fromServerMessage(msg);
+    const evt = eventBuilder.fromServerMessage(msg);
     cloudConnector.publishEvent(evt);
   });
 
-  cloudConnector.onCommand((cmd: UserCommand) => {
+  cloudConnector.onCommand(cmd => {
     if (cmd.validUntil >= new Date()) {
-      const msg = toClientMessage(cmd);
+      const msg = clientMessageBuilder.fromUserCommand(cmd);
       logger.debug("[cloud] received cmd:", cmd, "=>", msg);
       localSite.sendMessage(msg);
     } else {

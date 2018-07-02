@@ -1,115 +1,27 @@
+import { PartitionStatus } from "../../../common/partition";
+import {
+  AlarmEvent,
+  EventType,
+  InfoEvent,
+  PartitionChangeEventType,
+  PartitionEvent,
+  PartitionKeypadLedStateChangeEvent,
+  PartitionStatusChangeEvent,
+  PartitionTroubleLedStateChangeEvent,
+  SiteEvent,
+  SystemErrorEvent,
+  SystemTroubleStatusEvent,
+  TroubleEvent,
+  ZoneChangeEvent
+} from "../../../common/siteEvent";
+import { ZoneStatus } from "../../../common/zone";
 import { ServerCode } from "./codes";
-import { decodeHexByte, decodeIntCode, encodeIntCode } from "./encodings";
+import { decodeHexByte, decodeIntCode } from "./encodings";
 import { errorCodeDescriptions } from "./errorCode";
 import generateID from "./eventID";
+import { KeypadLedState } from "./keypadLedState";
 import { ServerMessage } from "./message";
-import { KeypadLedState, PartitionStatus } from "./partition";
 import { SystemTroubleStatus } from "./systemTroubleStatus";
-import { ZoneStatus } from "./zone";
-
-export const enum EventType {
-  Info = "Info",
-  SystemError = "SystemError",
-  Trouble = "Trouble",
-  SystemTroubleStatus = "SystemTroubleStatus",
-  Alarm = "Alarm",
-  ZoneChange = "ZoneChange",
-  PartitionChange = "PartitionChange",
-  Partition = "Partition"
-}
-
-export interface BaseEvent {
-  readonly date: Date;
-  readonly id: string;
-}
-
-export interface InfoEvent extends BaseEvent {
-  readonly type: EventType.Info;
-  readonly code: string;
-  readonly data: string;
-}
-export interface SystemErrorEvent extends BaseEvent {
-  readonly type: EventType.SystemError;
-  readonly code: string;
-}
-
-export interface TroubleEvent extends BaseEvent {
-  readonly type: EventType.Trouble;
-  readonly code: string;
-}
-
-export interface SystemTroubleStatusEvent extends BaseEvent {
-  readonly type: EventType.SystemTroubleStatus;
-  readonly status: string[];
-}
-
-export interface AlarmEvent extends BaseEvent {
-  readonly type: EventType.Alarm;
-  readonly code: string;
-}
-
-export const enum PartitionChangeEventType {
-  Status = "Status",
-  KeypadLed = "KeypadLed",
-  TroubleLed = "TroubleLed"
-}
-
-export interface PartitionChangeBaseEvent extends BaseEvent {
-  readonly type: EventType.PartitionChange;
-  readonly partitionID: string;
-}
-
-export interface PartitionStatusChangeEvent extends PartitionChangeBaseEvent {
-  readonly changeType: PartitionChangeEventType.Status;
-  readonly status: PartitionStatus;
-}
-
-export interface PartitionKeypadLedStateChangeEvent
-  extends PartitionChangeBaseEvent {
-  readonly changeType: PartitionChangeEventType.KeypadLed;
-  readonly keypadState: string[];
-  readonly flash: boolean;
-}
-
-export interface PartitionTroubleLedStateChangeEvent
-  extends PartitionChangeBaseEvent {
-  readonly changeType: PartitionChangeEventType.TroubleLed;
-  readonly on: boolean;
-}
-
-export type PartitionChangeEvent =
-  | PartitionStatusChangeEvent
-  | PartitionKeypadLedStateChangeEvent
-  | PartitionTroubleLedStateChangeEvent;
-
-export interface ZoneChangeEvent extends BaseEvent {
-  readonly type: EventType.ZoneChange;
-  readonly zoneID: string;
-  readonly status: ZoneStatus;
-  readonly partitionID?: string;
-}
-
-export interface PartitionEvent extends BaseEvent {
-  readonly type: EventType.Partition;
-  readonly partitionID: string;
-  readonly code: string;
-  readonly userID?: string;
-}
-
-export type SiteEvent =
-  | InfoEvent
-  | SystemErrorEvent
-  | TroubleEvent
-  | SystemTroubleStatusEvent
-  | AlarmEvent
-  | PartitionChangeEvent
-  | ZoneChangeEvent
-  | PartitionEvent;
-
-export function fromJson(raw: any): SiteEvent {
-  // const raw = JSON.build(json);
-  return { ...raw, date: new Date(raw.date) };
-}
 
 export function fromServerMessage(msg: ServerMessage): SiteEvent {
   switch (msg.code) {

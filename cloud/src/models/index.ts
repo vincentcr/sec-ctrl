@@ -4,7 +4,9 @@ import { SiteEventModel } from "./SiteEventModel";
 import { AccessTokenModel } from "./AccessTokenModel";
 
 export { AccessToken } from "./AccessTokenModel";
-export { User } from "./UserModel";
+export { User } from "../../../common/user";
+export { Site } from "../../../common/site";
+export { SiteEvent } from "../../../common/siteEvent";
 export { SiteEventRecord } from "./SiteEventModel";
 
 export interface Models {

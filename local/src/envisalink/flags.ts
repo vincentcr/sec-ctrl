@@ -6,7 +6,7 @@ export interface FlagsDefinition {
   [desc: string]: number;
 }
 
-export class Flags {
+export default class Flags {
   readonly definitions: FlagsDefinition;
   constructor(definitions: FlagsDefinition) {
     this.definitions = definitions;

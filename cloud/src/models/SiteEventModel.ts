@@ -1,5 +1,5 @@
 import { BaseModel, QueryResultPage } from "./BaseModel";
-import { SiteEvent } from "../../../common/event";
+import { SiteEvent } from ".";
 
 export interface SiteEventRecord {
   readonly data: {

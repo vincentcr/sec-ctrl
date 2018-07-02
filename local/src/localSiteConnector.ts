@@ -1,7 +1,10 @@
 import { EventEmitter } from "events";
 import { Socket } from "net";
 
-import { ClientMessage, ServerMessage } from "../../common/message";
+import {
+  ClientMessage,
+  ServerMessage
+} from "../../local/src/envisalink/message";
 import createLogger from "./logger";
 const logger = createLogger(__filename);
 

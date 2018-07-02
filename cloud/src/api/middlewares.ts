@@ -1,15 +1,15 @@
-import { User } from "../models";
 import * as Router from "koa-router";
 import initValidators, { ValidatorBuilder } from "./validate";
-import Services from "../services";
 import { Context } from "koa";
+import { IMiddleware } from "koa-router";
+
 import {
   SiteDoesNotExistError,
   UserNotAuthorizedError,
   InvalidCredentialsError
 } from "../errors";
-import { IMiddleware } from "koa-router";
-import logger from "../logger";
+import { User } from "../models";
+import Services from "../services";
 
 export type Middlewares = {
   validators: ValidatorBuilder;

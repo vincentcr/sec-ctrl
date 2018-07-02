@@ -1,5 +1,6 @@
 import * as uuid from "uuid";
 import * as bcrypt from "bcrypt";
+import { User } from ".";
 import { BaseModel } from "./BaseModel";
 import { VError } from "verror";
 import {
@@ -9,12 +10,6 @@ import {
   InvalidCredentialsError
 } from "../errors";
 import logger from "../logger";
-
-export interface User {
-  readonly id: string;
-  readonly username: string;
-  readonly sites: { thingID: string; name: string }[];
-}
 
 interface UserPrivate extends User {
   readonly hashedPassword: string;

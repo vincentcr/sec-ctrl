@@ -1,10 +1,9 @@
-import * as dateFns from "date-fns";
 import * as Koa from "koa";
-import Services from "../services";
 import * as Router from "koa-router";
-import { User } from "../models";
+
+import Services from "../services";
 import { Middlewares } from "./middlewares";
-import logger from "../logger";
+import { User } from "../models";
 
 interface RouteBuilderParam {
   services: Services;
