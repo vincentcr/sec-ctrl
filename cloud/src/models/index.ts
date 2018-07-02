@@ -3,7 +3,9 @@ import { SiteModel } from "./SiteModel";
 import { SiteEventModel } from "./SiteEventModel";
 import { AccessTokenModel } from "./AccessTokenModel";
 
-export * from "./types";
+export { AccessToken } from "./AccessTokenModel";
+export { User } from "./UserModel";
+export { SiteEventRecord } from "./SiteEventModel";
 
 export interface Models {
   readonly Users: UserModel;

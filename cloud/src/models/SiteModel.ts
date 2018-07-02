@@ -1,23 +1,23 @@
 import { BaseModel } from "./BaseModel";
-import { SiteRecord } from "./types";
 import { VError } from "verror";
 import {
   ZoneChangeEvent,
   PartitionChangeEvent,
   PartitionChangeEventType,
   SystemTroubleStatusEvent,
-  Event,
+  SiteEvent,
   EventType
 } from "../../../common/event";
 import logger from "../logger";
 import { SiteAlreadyClaimedError, SiteDoesNotExistError } from "../errors";
+import { Site } from "../../../common/site";
 
-export class SiteModel extends BaseModel<SiteRecord> {
+export class SiteModel extends BaseModel<Site> {
   constructor(dynamodbClient: AWS.DynamoDB.DocumentClient) {
     super(dynamodbClient, "sites");
   }
 
-  async getByThingID(thingID: string): Promise<SiteRecord | undefined> {
+  async getByThingID(thingID: string): Promise<Site | undefined> {
     return this.get({ thingID });
   }
 
@@ -53,7 +53,7 @@ export class SiteModel extends BaseModel<SiteRecord> {
     }
   }
 
-  async updateFromEvent(thingID: string, event: Event) {
+  async updateFromEvent(thingID: string, event: SiteEvent) {
     switch (event.type) {
       case EventType.PartitionChange:
         await this.updatePartitionFromEvent(thingID, event);

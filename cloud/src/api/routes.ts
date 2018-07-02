@@ -2,7 +2,7 @@ import * as dateFns from "date-fns";
 import * as Koa from "koa";
 import Services from "../services";
 import * as Router from "koa-router";
-import { SiteRecord, UserRecord } from "../models";
+import { User } from "../models";
 import { Middlewares } from "./middlewares";
 import logger from "../logger";
 
@@ -47,7 +47,7 @@ function setupUsersRoutes({ services, app, middlewares }: RouteBuilderParam) {
   });
 
   router.get("/me", authorize, async ctx => {
-    const user = ctx.state.user as UserRecord;
+    const user = ctx.state.user as User;
     ctx.response.body = user;
   });
 
@@ -69,7 +69,7 @@ function setupSitesRoutes({ services, app, middlewares }: RouteBuilderParam) {
     "/:thingID/claim",
     validators("sites-thingID-claim"),
     async ctx => {
-      const user = ctx.state.user as UserRecord;
+      const user = ctx.state.user as User;
       const thingID = ctx.params.thingID as string;
       await models.Sites.claim({ claimedByID: user.id, thingID });
       await models.Users.addClaimedThing({

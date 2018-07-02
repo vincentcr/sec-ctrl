@@ -1,4 +1,4 @@
-import { UserRecord } from "../models";
+import { User } from "../models";
 import * as Router from "koa-router";
 import initValidators, { ValidatorBuilder } from "./validate";
 import Services from "../services";
@@ -26,7 +26,7 @@ export async function setupMiddlewares({
   const middlewares = {
     validators,
     async getClaimedSite(ctx: Router.IRouterContext, next: () => Promise<any>) {
-      const user = ctx.state.user as UserRecord;
+      const user = ctx.state.user as User;
       const site = await models.Sites.getByThingID(ctx.params.thingID);
       if (site == null || site.claimedByID !== user.id) {
         throw new SiteDoesNotExistError();

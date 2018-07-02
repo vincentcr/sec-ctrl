@@ -2,16 +2,20 @@ import { promisify } from "util";
 import * as crypto from "crypto";
 
 import { BaseModel } from "./BaseModel";
-import { AccessTokenRecord } from "./types";
 
 const randomBytes = promisify(crypto.randomBytes);
 
-export class AccessTokenModel extends BaseModel<AccessTokenRecord> {
+export interface AccessToken {
+  readonly userID: string;
+  readonly token: string;
+}
+
+export class AccessTokenModel extends BaseModel<AccessToken> {
   constructor(dynamodbClient: AWS.DynamoDB.DocumentClient) {
     super(dynamodbClient, "accessTokens");
   }
 
-  async create(userID: string): Promise<AccessTokenRecord> {
+  async create(userID: string): Promise<AccessToken> {
     const token = await this.genToken(32);
 
     const accessToken = {

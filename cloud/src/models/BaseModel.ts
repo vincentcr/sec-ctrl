@@ -3,7 +3,6 @@ import {
   DocumentClient
 } from "aws-sdk/clients/dynamodb";
 import AWS = require("aws-sdk");
-import { QueryResultPage } from "./types";
 import { VError } from "verror";
 
 const TablePrefix = "secCtrl.";
@@ -15,14 +14,12 @@ type DynamoValue =
   | DynamoPrimitive[]
   | { [key: string]: DynamoValue };
 
-type Diff<
-  T extends string | number | symbol,
-  U extends string | number | symbol
-> = ({ [P in T]: P } & { [P in U]: never } & { [x: string]: never })[T];
-
-type Omit<T, K extends keyof T> = Pick<T, Diff<keyof T, K>>;
-
 type UpdateParams = Omit<DocumentClient.UpdateItemInput, "TableName">;
+
+export interface QueryResultPage<T> {
+  readonly items: T[];
+  readonly cursor?: object;
+}
 
 export class BaseModel<TItem> {
   protected readonly dynamodbClient: AWS.DynamoDB.DocumentClient;

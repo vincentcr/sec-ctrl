@@ -1,6 +1,5 @@
 import * as uuid from "uuid";
 import * as bcrypt from "bcrypt";
-import { UserRecord } from "./types";
 import { BaseModel } from "./BaseModel";
 import { VError } from "verror";
 import {
@@ -11,19 +10,22 @@ import {
 } from "../errors";
 import logger from "../logger";
 
-interface UserRecordPrivate extends UserRecord {
+export interface User {
+  readonly id: string;
+  readonly username: string;
+  readonly sites: { thingID: string; name: string }[];
+}
+
+interface UserPrivate extends User {
   readonly hashedPassword: string;
 }
 
-export class UserModel extends BaseModel<UserRecordPrivate> {
+export class UserModel extends BaseModel<UserPrivate> {
   constructor(dynamodbClient: AWS.DynamoDB.DocumentClient) {
     super(dynamodbClient, "users");
   }
 
-  async create(params: {
-    username: string;
-    password: string;
-  }): Promise<UserRecord> {
+  async create(params: { username: string; password: string }): Promise<User> {
     const { username, password } = params;
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -47,7 +49,7 @@ export class UserModel extends BaseModel<UserRecordPrivate> {
     }
   }
 
-  async getByID(id: string): Promise<UserRecord | undefined> {
+  async getByID(id: string): Promise<User | undefined> {
     const res = await this.query({
       indexName: "id-index",
       keyConditionExpression: "id=:id",
@@ -65,7 +67,7 @@ export class UserModel extends BaseModel<UserRecordPrivate> {
     return UserModel.toPublicUser(privateUser);
   }
 
-  private static toPublicUser(privateUser: UserRecordPrivate): UserRecord {
+  private static toPublicUser(privateUser: UserPrivate): User {
     const { hashedPassword, ...user } = privateUser;
     return user;
   }
@@ -73,7 +75,7 @@ export class UserModel extends BaseModel<UserRecordPrivate> {
   async authenticate(params: {
     username: string;
     password: string;
-  }): Promise<UserRecord> {
+  }): Promise<User> {
     const { username, password } = params;
 
     const privateUser = await this.get({ username });
