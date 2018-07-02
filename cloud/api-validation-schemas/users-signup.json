@@ -7,11 +7,13 @@
       "properties": {
         "username": {
           "type": "string",
-          "minLength": 2
+          "minLength": 2,
+          "maxLength": 1024
         },
         "password": {
           "type": "string",
-          "minLength": 6
+          "minLength": 6,
+          "maxLength": 1024
         }
       },
       "required": ["username", "password"],
