@@ -29,7 +29,8 @@ export class UserModel extends BaseModel<UserRecordPrivate> {
 
     const user = {
       id: uuid.v4(),
-      username: params.username
+      username: params.username,
+      sites: []
     };
     try {
       await this.put({
@@ -89,5 +90,31 @@ export class UserModel extends BaseModel<UserRecordPrivate> {
     }
 
     return UserModel.toPublicUser(privateUser);
+  }
+
+  async addClaimedThing(params: {
+    username: string;
+    thingID: string;
+    name: string;
+  }) {
+    const { username, thingID, name } = params;
+
+    await this.update({
+      Key: { username },
+      UpdateExpression:
+        "set #sites = list_append(if_not_exists(#sites, :emptyList), :site)",
+      ExpressionAttributeNames: {
+        "#sites": "sites"
+      },
+      ExpressionAttributeValues: {
+        ":site": [
+          {
+            thingID,
+            name
+          }
+        ],
+        ":emptyList": []
+      }
+    });
   }
 }

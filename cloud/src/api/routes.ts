@@ -2,7 +2,7 @@ import * as dateFns from "date-fns";
 import * as Koa from "koa";
 import { Services } from "../services";
 import * as Router from "koa-router";
-import { SiteRecord } from "../models";
+import { SiteRecord, UserRecord } from "../models";
 import { Middlewares } from "./middlewares";
 import logger from "../logger";
 
@@ -32,22 +32,28 @@ function setupUsersRoutes({ services, app, middlewares }: RouteBuilderParam) {
   const router = new Router({ prefix: "/users" });
 
   const { models } = services;
-  const { validators } = middlewares;
+  const { validators, authorize } = middlewares;
 
   router.post("/signup", validators("users-signup"), async ctx => {
     const user = await models.Users.create(ctx.request.body);
     const accessToken = await models.AccessTokens.create(user.id);
-    ctx.response.body = accessToken;
+    ctx.response.body = { ...user, token: accessToken.token };
   });
 
   router.post("/signin", validators("users-signin"), async ctx => {
     const user = await models.Users.authenticate(ctx.request.body);
     const accessToken = await models.AccessTokens.create(user.id);
-    ctx.response.body = accessToken;
+    ctx.response.body = { ...user, token: accessToken.token };
   });
 
-  // users.post("/users/signout");
-  // users.get("/users/:id");
+  router.get("/me", authorize, async ctx => {
+    const user = ctx.state.user as UserRecord;
+    ctx.response.body = user;
+  });
+
+  router.post("/users/:id/signout", authorize, async ctx => {
+    throw new Error("not implemented :(");
+  });
 
   app.use(router.routes()).use(router.allowedMethods());
 }
@@ -59,12 +65,21 @@ function setupSitesRoutes({ services, app, middlewares }: RouteBuilderParam) {
   const router = new Router({ prefix: "/sites" });
   router.use(authorize);
 
-  router.post("/:thingID/claim", async ctx => {
-    const claimedByID = ctx.state.user.id as string;
-    const thingID = ctx.params.thingID as string;
-    await models.Sites.claim({ claimedByID, thingID });
-    ctx.response.status = 204;
-  });
+  router.post(
+    "/:thingID/claim",
+    validators("sites-thingID-claim"),
+    async ctx => {
+      const user = ctx.state.user as UserRecord;
+      const thingID = ctx.params.thingID as string;
+      await models.Sites.claim({ claimedByID: user.id, thingID });
+      await models.Users.addClaimedThing({
+        ...ctx.request.body,
+        username: user.username,
+        thingID
+      });
+      ctx.response.status = 204;
+    }
+  );
 
   router.get("/:thingID", getClaimedSite, async ctx => {
     ctx.response.body = ctx.state.site;

@@ -10,6 +10,7 @@ export interface QueryResultPage<T> {
 export interface UserRecord {
   readonly id: string;
   readonly username: string;
+  readonly sites: { thingID: string; name: string }[];
 }
 
 export interface AccessTokenRecord {
