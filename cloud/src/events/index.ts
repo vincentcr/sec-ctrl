@@ -3,12 +3,12 @@ import * as AWS from "aws-sdk";
 
 import logger from "../logger";
 import { SiteEventRecord } from "../models";
-import createServices, { Services } from "../services";
+import Services from "../services";
 
 export async function handler(data: DynamoDBStreamEvent, context: Context) {
   logger.debug(data, "dynamo event");
 
-  const services = await createServices();
+  const services = await Services.create();
 
   try {
     await processAll(data, services);

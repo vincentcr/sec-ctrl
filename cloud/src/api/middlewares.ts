@@ -1,7 +1,7 @@
 import { UserRecord } from "../models";
 import * as Router from "koa-router";
 import initValidators, { ValidatorBuilder } from "./validate";
-import { Services } from "../services";
+import Services from "../services";
 import { Context } from "koa";
 import {
   SiteDoesNotExistError,

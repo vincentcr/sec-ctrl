@@ -1,18 +1,37 @@
+import * as dateFns from "date-fns";
 import AWS = require("aws-sdk");
 import { initModels, Models } from "./models";
+import { Site } from "../../common/site";
+import { UserCommand } from "../../common/userCommand";
 
-export interface Services {
-  models: Models;
-  iot: AWS.IotData;
-}
+export default class Services {
+  readonly models: Models;
+  private readonly iot: AWS.IotData;
 
-export default async function createServices() {
-  const [models, iot] = await Promise.all([
-    initModels(new AWS.DynamoDB.DocumentClient()),
-    initIotDataPlane()
-  ]);
+  static async create() {
+    const [models, iot] = await Promise.all([
+      initModels(new AWS.DynamoDB.DocumentClient()),
+      initIotDataPlane()
+    ]);
+    return new Services(models, iot);
+  }
 
-  return { models, iot };
+  private constructor(models: Models, iot: AWS.IotData) {
+    this.models = models;
+    this.iot = iot;
+  }
+
+  async sendCommand(params: { cmd: UserCommand; site: Site }) {
+    const { cmd, site } = params;
+    const validUntil = dateFns.addSeconds(new Date(), 30);
+    const fullCmd: UserCommand = { validUntil, ...cmd };
+    const payload = JSON.stringify(fullCmd);
+    await this.iot.publish({
+      topic: `sec-ctrl/${site.thingID}/commands`,
+      qos: 1,
+      payload
+    });
+  }
 }
 
 async function initIotDataPlane() {

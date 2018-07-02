@@ -1,6 +1,6 @@
 import * as dateFns from "date-fns";
 import * as Koa from "koa";
-import { Services } from "../services";
+import Services from "../services";
 import * as Router from "koa-router";
 import { SiteRecord, UserRecord } from "../models";
 import { Middlewares } from "./middlewares";
@@ -90,15 +90,9 @@ function setupSitesRoutes({ services, app, middlewares }: RouteBuilderParam) {
     validators("sites-thingID-command"),
     getClaimedSite,
     async ctx => {
-      const validUntil = dateFns.addSeconds(new Date(), 30);
-      const cmd = { validUntil, ...ctx.request.body };
-      const site = ctx.state.site as SiteRecord;
-      const payload = JSON.stringify(cmd);
-      await services.iot.publish({
-        topic: `sec-ctrl/${site.thingID}/commands`,
-        qos: 1,
-        payload
-      });
+      const cmd = ctx.request.body;
+      const site = ctx.state.site;
+      await services.sendCommand({ cmd, site });
       ctx.response.status = 202;
     }
   );

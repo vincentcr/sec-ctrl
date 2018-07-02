@@ -3,7 +3,7 @@ import * as http from "http";
 import { APIGatewayEvent, Context } from "aws-lambda";
 import * as awsServerlessExpress from "aws-serverless-express";
 import createApp from "./app";
-import createServices from "../services";
+import Services from "../services";
 
 let server: http.Server;
 
@@ -19,7 +19,7 @@ export function handler(event: APIGatewayEvent, context: Context) {
 
 async function lazyInitServer(): Promise<void> {
   if (server == null) {
-    const services = await createServices();
+    const services = await Services.create();
     const app = await createApp(services);
     server = awsServerlessExpress.createServer(app.callback());
   }

@@ -4,7 +4,7 @@ import * as bodyParser from "koa-bodyparser";
 import * as cors from "@koa/cors";
 import { VError } from "verror";
 
-import { Services } from "../services";
+import Services from "../services";
 import logger from "../logger";
 import { setupRoutes } from "./routes";
 import { setupMiddlewares } from "./middlewares";
