@@ -96,7 +96,7 @@ export interface PartitionEvent extends BaseEvent {
   readonly userID?: string;
 }
 
-export type Event =
+export type SiteEvent =
   | InfoEvent
   | SystemErrorEvent
   | TroubleEvent
@@ -106,12 +106,12 @@ export type Event =
   | ZoneChangeEvent
   | PartitionEvent;
 
-export function fromJson(raw: any): Event {
+export function fromJson(raw: any): SiteEvent {
   // const raw = JSON.build(json);
   return { ...raw, date: new Date(raw.date) };
 }
 
-export function fromServerMessage(msg: ServerMessage): Event {
+export function fromServerMessage(msg: ServerMessage): SiteEvent {
   switch (msg.code) {
     case ServerCode.SysErr:
       return buildSystemErrorEvent(msg);

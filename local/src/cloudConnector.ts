@@ -4,7 +4,7 @@ import * as path from "path";
 import * as awsIot from "aws-iot-device-sdk";
 import * as levelStore from "mqtt-level-store";
 
-import { Event } from "../../common/event";
+import { SiteEvent } from "../../common/event";
 import { fromJSON, UserCommand } from "../../common/userCommand";
 import { CloudConfig } from "./config";
 import createLogger, { Logger } from "./logger";
@@ -62,7 +62,7 @@ export class CloudConnector {
     return `sec-ctrl/${this.clientId}/${name}`;
   }
 
-  publishEvent(evt: Event) {
+  publishEvent(evt: SiteEvent) {
     if (this.device == null) {
       throw new Error("device not connected. call start() first");
     }
