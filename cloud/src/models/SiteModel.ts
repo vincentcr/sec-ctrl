@@ -135,8 +135,8 @@ export class SiteModel extends BaseModel<Site> {
         throw new Error("unmapped change type:" + JSON.stringify(event));
     }
 
-    const updateAttrs: { [k: string]: any } = {};
-    const updateNames: { [k: string]: any } = {};
+    const updateNames: { [k: string]: any } = { "#partitionID": "partitionID" };
+    const updateAttrs: { [k: string]: any } = { ":partitionID": partitionID };
     for (const [key, val] of Object.entries(props)) {
       updateAttrs[":" + key] = val;
       updateNames["#" + key] = key;
