@@ -23,6 +23,8 @@ import { KeypadLedState } from "./keypadLedState";
 import { ServerMessage } from "./message";
 import { SystemTroubleStatus } from "./systemTroubleStatus";
 
+const MAX_ZONES_PER_PARTITION = 8;
+
 export function fromServerMessage(msg: ServerMessage): SiteEvent {
   switch (msg.code) {
     case ServerCode.SysErr:
@@ -165,7 +167,7 @@ function buildPartitionStatusChangeEvent(
   msg: ServerMessage,
   status: PartitionStatus
 ): PartitionStatusChangeEvent {
-  const partitionID = msg.data.toString();
+  const partitionID = decodeIntCode(msg.data);
 
   return {
     date: new Date(),
@@ -181,7 +183,7 @@ function buildPartitionKeypadLedStateChangeEvent(
   msg: ServerMessage,
   flash: boolean
 ): PartitionKeypadLedStateChangeEvent {
-  const partitionID = "1";
+  const partitionID = 1;
   const flags = decodeHexByte(msg.data);
   const keypadState = KeypadLedState.toStrings(flags);
 
@@ -200,7 +202,7 @@ function buildPartitionTroubleLedChangeEvent(
   msg: ServerMessage,
   on: boolean
 ): PartitionTroubleLedStateChangeEvent {
-  const partitionID = msg.data.toString();
+  const partitionID = decodeIntCode(msg.data);
 
   return {
     date: new Date(),
@@ -216,8 +218,8 @@ function buildZoneStatusChangeEvent(
   msg: ServerMessage,
   status: ZoneStatus
 ): ZoneChangeEvent {
-  let zoneID: string;
-  let partitionID: string | undefined;
+  let zoneID: number;
+  let partitionID: number | undefined;
 
   if (
     [
@@ -227,10 +229,11 @@ function buildZoneStatusChangeEvent(
       ZoneStatus.Restore
     ].includes(status)
   ) {
-    zoneID = msg.data.toString();
+    zoneID = decodeIntCode(msg.data);
+    partitionID = Math.ceil(zoneID / MAX_ZONES_PER_PARTITION);
   } else {
-    partitionID = msg.data.slice(0, 1).toString();
-    zoneID = msg.data.slice(1).toString();
+    partitionID = decodeIntCode(msg.data.slice(0, 1));
+    zoneID = decodeIntCode(msg.data.slice(1));
   }
 
   return {
@@ -244,7 +247,7 @@ function buildZoneStatusChangeEvent(
 }
 
 function buildPartitionEvent(msg: ServerMessage): PartitionEvent {
-  const partitionID = msg.data.toString();
+  const partitionID = decodeIntCode(msg.data);
 
   return {
     date: new Date(),
@@ -256,7 +259,7 @@ function buildPartitionEvent(msg: ServerMessage): PartitionEvent {
 }
 
 function buildUserPartitionEvent(msg: ServerMessage): PartitionEvent {
-  const partitionID = msg.data.slice(0, 1).toString();
+  const partitionID = decodeIntCode(msg.data.slice(0, 1));
   const userID = msg.data.slice(1).toString();
 
   return {

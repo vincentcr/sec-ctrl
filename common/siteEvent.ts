@@ -50,7 +50,7 @@ export const enum PartitionChangeEventType {
 
 export interface PartitionChangeBaseEvent extends BaseEvent {
   readonly type: EventType.PartitionChange;
-  readonly partitionID: string;
+  readonly partitionID: number;
 }
 
 export interface PartitionStatusChangeEvent extends PartitionChangeBaseEvent {
@@ -78,14 +78,14 @@ export type PartitionChangeEvent =
 
 export interface ZoneChangeEvent extends BaseEvent {
   readonly type: EventType.ZoneChange;
-  readonly zoneID: string;
+  readonly zoneID: number;
   readonly status: ZoneStatus;
-  readonly partitionID?: string;
+  readonly partitionID: number;
 }
 
 export interface PartitionEvent extends BaseEvent {
   readonly type: EventType.Partition;
-  readonly partitionID: string;
+  readonly partitionID: number;
   readonly code: string;
   readonly userID?: string;
 }

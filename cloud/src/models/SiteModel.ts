@@ -105,7 +105,7 @@ export class SiteModel extends BaseModel<Site> {
         UpdateExpression: "SET #parts.#part = :initPart",
         ExpressionAttributeNames: {
           "#parts": "partitions",
-          "#part": partitionID
+          "#part": partitionID.toString()
         },
         ExpressionAttributeValues: {
           ":initPart": {}
@@ -153,7 +153,7 @@ export class SiteModel extends BaseModel<Site> {
       UpdateExpression: updateExp,
       ExpressionAttributeNames: {
         "#parts": "partitions",
-        "#part": partitionID,
+        "#part": partitionID.toString(),
         ...updateNames
       },
       ExpressionAttributeValues: updateAttrs
@@ -186,7 +186,7 @@ export class SiteModel extends BaseModel<Site> {
     await this.update({
       Key: { thingID },
       UpdateExpression: `SET zones.#zoneID = :zone`,
-      ExpressionAttributeNames: { "#zoneID": zoneID },
+      ExpressionAttributeNames: { "#zoneID": zoneID.toString() },
       ExpressionAttributeValues: {
         ":zone": zone
       }

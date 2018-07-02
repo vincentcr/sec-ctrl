@@ -6,10 +6,11 @@ export const enum ZoneStatus {
   Fault = "Fault",
   FaultRestore = "Fault Restore",
   Open = "Open",
-  Restore = "Restore",
+  Restore = "Restore"
 }
 
 export interface Zone {
   id: string;
+  partitionID: number;
   status: ZoneStatus;
 }
