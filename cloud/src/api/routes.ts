@@ -36,13 +36,13 @@ function setupUsersRoutes({ services, app, middlewares }: RouteBuilderParam) {
   router.post("/signup", validators("users-signup"), async ctx => {
     const user = await models.Users.create(ctx.request.body);
     const accessToken = await models.AccessTokens.create(user.id);
-    ctx.response.body = { ...user, token: accessToken.token };
+    ctx.response.body = { user, token: accessToken.token };
   });
 
   router.post("/signin", validators("users-signin"), async ctx => {
     const user = await models.Users.authenticate(ctx.request.body);
     const accessToken = await models.AccessTokens.create(user.id);
-    ctx.response.body = { ...user, token: accessToken.token };
+    ctx.response.body = { user, token: accessToken.token };
   });
 
   router.get("/me", authorize, async ctx => {
