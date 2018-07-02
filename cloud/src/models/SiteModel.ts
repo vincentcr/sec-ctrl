@@ -21,8 +21,12 @@ export class SiteModel extends BaseModel<Site> {
     return this.get({ thingID });
   }
 
-  async claim(params: { thingID: string; claimedByID: string }): Promise<void> {
-    const { thingID, claimedByID } = params;
+  async claim(params: {
+    thingID: string;
+    claimedByID: string;
+    name: string;
+  }): Promise<void> {
+    const { thingID, claimedByID, name } = params;
 
     if ((await this.getByThingID(thingID)) == null) {
       throw new SiteDoesNotExistError();
@@ -30,12 +34,14 @@ export class SiteModel extends BaseModel<Site> {
 
     const req = {
       Key: { thingID },
-      UpdateExpression: "SET #claimedByID = :claimedByID",
+      UpdateExpression: "SET #claimedByID = :claimedByID, #name = :name",
       ExpressionAttributeNames: {
-        "#claimedByID": "claimedByID"
+        "#claimedByID": "claimedByID",
+        "#name": "name"
       },
       ExpressionAttributeValues: {
-        ":claimedByID": claimedByID
+        ":claimedByID": claimedByID,
+        ":name": name
       },
       ConditionExpression: "attribute_not_exists(#claimedByID)"
     };

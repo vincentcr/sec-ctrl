@@ -3,6 +3,7 @@ import { Zone } from "./zone";
 
 export interface Site {
   readonly thingID: string;
+  readonly name?: string;
   readonly claimedByID: string;
   readonly partitions: { [id: string]: Partition };
   readonly zones: { [id: string]: Zone };

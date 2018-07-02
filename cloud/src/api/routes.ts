@@ -70,9 +70,10 @@ function setupSitesRoutes({ services, app, middlewares }: RouteBuilderParam) {
     async ctx => {
       const user = ctx.state.user as User;
       const thingID = ctx.params.thingID as string;
-      await models.Sites.claim({ claimedByID: user.id, thingID });
+      const { name } = ctx.request.body;
+      await models.Sites.claim({ claimedByID: user.id, thingID, name });
       await models.Users.addClaimedThing({
-        ...ctx.request.body,
+        name,
         username: user.username,
         thingID
       });
