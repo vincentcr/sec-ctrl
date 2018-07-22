@@ -1,9 +1,9 @@
 import * as Koa from "koa";
 import * as Router from "koa-router";
 
+import { User } from "../../../common/user";
 import Services from "../services";
 import { Middlewares } from "./middlewares";
-import { User } from "../models";
 
 interface RouteBuilderParam {
   services: Services;
@@ -40,7 +40,7 @@ function setupUsersRoutes({ services, app, middlewares }: RouteBuilderParam) {
   });
 
   router.post("/signin", validators("users-signin"), async ctx => {
-    const user = await models.Users.authenticate(ctx.request.body);
+    const user = await models.Users.authenticateByPassword(ctx.request.body);
     const accessToken = await models.AccessTokens.create(user.id);
     ctx.response.body = { user, token: accessToken.token };
   });
@@ -64,60 +64,42 @@ function setupSitesRoutes({ services, app, middlewares }: RouteBuilderParam) {
   const router = new Router({ prefix: "/sites" });
   router.use(authorize);
 
-  router.post(
-    "/:thingID/claim",
-    validators("sites-thingID-claim"),
-    async ctx => {
-      const user = ctx.state.user as User;
-      const thingID = ctx.params.thingID as string;
-      const { name } = ctx.request.body;
-      await models.Sites.claim({ claimedByID: user.id, thingID, name });
-      await models.Users.addClaimedThing({
-        name,
-        username: user.username,
-        thingID
-      });
-      ctx.response.status = 204;
-    }
-  );
+  router.post("/:siteId/claim", validators("sites-siteId-claim"), async ctx => {
+    const user = ctx.state.user as User;
+    const siteId = ctx.params.siteId as string;
+    const { name } = ctx.request.body;
+    await models.Sites.claim({ id: siteId, name, ownerId: user.id });
+    ctx.response.status = 204;
+  });
 
-  router.get("/:thingID", getClaimedSite, async ctx => {
+  router.get("/:siteId", getClaimedSite, async ctx => {
     ctx.response.body = ctx.state.site;
   });
 
   router.post(
-    "/:thingID/command",
-    validators("sites-thingID-command"),
+    "/:siteId/command",
+    validators("sites-siteId-command"),
     getClaimedSite,
     async ctx => {
       const cmd = ctx.request.body;
-      const site = ctx.state.site;
-      await services.sendCommand({ cmd, site });
+      const siteId = ctx.state.site.id;
+      await services.sendCommand({ cmd, siteId });
       ctx.response.status = 202;
     }
   );
 
   router.get(
-    "/:thingID/events",
-    validators("sites-thingID-events"),
+    "/:siteId/events",
+    validators("sites-siteId-events"),
     getClaimedSite,
     async ctx => {
-      const { thingID } = ctx.state.site;
+      const { siteId } = ctx.state.site;
+      const { limit, offsetId } = ctx.query;
 
-      let limit: number | undefined;
-      if (ctx.query.limit) {
-        limit = parseInt(ctx.query.limit, 10);
-      }
-
-      let cursor: object | undefined;
-      if (ctx.query.cursor) {
-        cursor = JSON.parse(ctx.query.cursor);
-      }
-
-      const results = await models.SiteEvents.getByThingID({
-        thingID,
+      const results = await models.SiteEvents.getBySiteId({
+        siteId,
         limit,
-        cursor
+        offsetId
       });
       ctx.response.body = results;
     }

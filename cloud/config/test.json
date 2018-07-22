@@ -1,0 +1,14 @@
+{
+  "db": {
+    "port": "2346",
+    "database": "sec_ctrl_test",
+    "user": "sec_ctrl_test",
+    "password": "sec_ctrl_test123"
+  },
+  "security": {
+    "bcryptRounds": 1
+  },
+  "logging": {
+    "level": "info"
+  }
+}

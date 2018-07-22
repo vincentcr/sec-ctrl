@@ -1,0 +1,15 @@
+{
+  "db": {
+    "host": "localhost",
+    "port": 5432,
+    "database": "sec_ctrl_dev",
+    "user": "sec_ctrl_dev",
+    "password": "sec_ctrl_dev123"
+  },
+  "security": {
+    "bcryptRounds": 10
+  },
+  "logging": {
+    "level": "debug"
+  }
+}

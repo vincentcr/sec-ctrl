@@ -1,15 +1,15 @@
 import { APIGatewayEvent, Context, DynamoDBStreamEvent } from "aws-lambda";
 
-import * as events from "./events/index";
 import * as api from "./api/lambda";
+import * as events from "./events";
 import { die } from "./logger";
 
 export function handler(
-  event: APIGatewayEvent | DynamoDBStreamEvent,
+  event: APIGatewayEvent | events.SecCtrlIoTPayload,
   context: Context
 ) {
-  if ("Records" in event) {
-    // dynamo stream event
+  if ("thingId" in event) {
+    // iot event
     events.handler(event, context);
   } else if ("headers" in event) {
     // api request

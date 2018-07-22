@@ -22,7 +22,7 @@ async function main() {
   });
 
   cloudConnector.onCommand(cmd => {
-    if (cmd.validUntil >= new Date()) {
+    if (cmd.expiresAt >= new Date()) {
       const msg = clientMessageBuilder.fromUserCommand(cmd);
       logger.debug("[cloud] received cmd:", cmd, "=>", msg);
       localSite.sendMessage(msg);

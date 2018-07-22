@@ -9,14 +9,10 @@
           "properties": {
             "code": {
               "type": "string",
-              "enum": [
-                "StatusReport"
-              ]
+              "enum": ["StatusReport"]
             }
           },
-          "required": [
-            "code"
-          ],
+          "required": ["code"],
           "additionalProperties": false
         },
         {
@@ -24,21 +20,14 @@
           "properties": {
             "code": {
               "type": "string",
-              "enum": [
-                "ArmAway",
-                "ArmStay",
-                "ArmWithZeroEntryDelay"
-              ]
+              "enum": ["ArmAway", "ArmStay", "ArmWithZeroEntryDelay"]
             },
-            "partitionID": {
+            "partitionId": {
               "type": "string",
               "pattern": "^[0-9]+$"
             }
           },
-          "required": [
-            "code",
-            "partitionID"
-          ],
+          "required": ["code", "partitionId"],
           "additionalProperties": false
         },
         {
@@ -46,25 +35,18 @@
           "properties": {
             "code": {
               "type": "string",
-              "enum": [
-                "ArmWithPIN",
-                "Disarm"
-              ]
+              "enum": ["ArmWithPIN", "Disarm"]
             },
             "pin": {
               "type": "string",
               "pattern": "^[0-9]+$"
             },
-            "partitionID": {
+            "partitionId": {
               "type": "string",
               "pattern": "^[0-9]+$"
             }
           },
-          "required": [
-            "code",
-            "partitionID",
-            "pin"
-          ],
+          "required": ["code", "partitionId", "pin"],
           "additionalProperties": false
         },
         {
@@ -72,23 +54,14 @@
           "properties": {
             "code": {
               "type": "string",
-              "enum": [
-                "Panic"
-              ]
+              "enum": ["Panic"]
             },
             "target": {
               "type": "string",
-              "enum": [
-                "Fire",
-                "Ambulance",
-                "Police"
-              ]
+              "enum": ["Fire", "Ambulance", "Police"]
             }
           },
-          "required": [
-            "code",
-            "target"
-          ],
+          "required": ["code", "target"],
           "additionalProperties": false
         }
       ]

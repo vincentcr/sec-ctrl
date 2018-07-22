@@ -11,7 +11,7 @@ export const enum UserCommandCode {
 export type PanicTarget = "Fire" | "Ambulance" | "Police";
 
 export interface UserCommandBase {
-  validUntil: Date;
+  ttlSeconds?: number;
 }
 
 export interface UserCommandStatusReport extends UserCommandBase {
@@ -23,12 +23,12 @@ export interface UserCommandArm extends UserCommandBase {
     | UserCommandCode.ArmAway
     | UserCommandCode.ArmStay
     | UserCommandCode.ArmWithZeroEntryDelay;
-  partitionID: string;
+  partitionId: number;
 }
 
 export interface UserCommandithPin extends UserCommandBase {
   code: UserCommandCode.ArmWithPIN | UserCommandCode.Disarm;
-  partitionID: string;
+  partitionId: number;
   pin: string;
 }
 
@@ -43,7 +43,14 @@ export type UserCommand =
   | UserCommandithPin
   | UserCommandPanic;
 
-export function fromJSON(data: string): UserCommand {
-  const raw = JSON.parse(data);
-  return { ...raw, validUntil: new Date(raw.validUntil) };
+export type UserCommandWithExpiration = UserCommand & {
+  expiresAt: Date;
+};
+
+export function userCommandfromJSON(data: string): UserCommandWithExpiration {
+  const { expiresAt, ...raw } = JSON.parse(data) as UserCommand & {
+    expiresAt: string;
+  };
+  const cmd = { ...raw, expiresAt: new Date(expiresAt) };
+  return cmd;
 }

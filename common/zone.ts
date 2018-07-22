@@ -10,7 +10,7 @@ export const enum ZoneStatus {
 }
 
 export interface Zone {
-  id: string;
-  partitionID: number;
+  id: number;
+  partitionId: number;
   status: ZoneStatus;
 }

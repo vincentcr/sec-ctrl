@@ -1,212 +1,94 @@
-import { BaseModel } from "./BaseModel";
-import { VError } from "verror";
-import {
-  ZoneChangeEvent,
-  PartitionChangeEvent,
-  PartitionChangeEventType,
-  SystemTroubleStatusEvent,
-  SiteEvent,
-  EventType
-} from "../../../common/siteEvent";
-import logger from "../logger";
-import { SiteAlreadyClaimedError, SiteDoesNotExistError } from "../errors";
-import { Site } from "../../../common/site";
+import * as Knex from "knex";
 
-export class SiteModel extends BaseModel<Site> {
-  constructor(dynamodbClient: AWS.DynamoDB.DocumentClient) {
-    super(dynamodbClient, "sites");
+import { Site } from "../../../common/site";
+import { EventType, SiteEvent } from "../../../common/siteEvent";
+import { Item } from "../../node_modules/aws-sdk/clients/mediastoredata";
+import { SiteAlreadyClaimedError } from "../errors";
+import logger from "../logger";
+import { BaseModel } from "./BaseModel";
+import { mapObjectKeys } from "./keyMapper";
+
+export type SiteRecord = Omit<Omit<Site, "partitions">, "zones">;
+
+export class SiteModel extends BaseModel<SiteRecord> {
+  constructor(knex: Knex) {
+    super(knex, "sites");
   }
 
-  async getByThingID(thingID: string): Promise<Site | undefined> {
-    return this.get({ thingID });
+  async getByID(id: string): Promise<Site | undefined> {
+    const rows = await this.queryBuilder().where({ id });
+    return rows[0];
   }
 
   async claim(params: {
-    thingID: string;
-    claimedByID: string;
+    id: string;
+    ownerId: string;
     name: string;
   }): Promise<void> {
-    const { thingID, claimedByID, name } = params;
+    const { id, ownerId, name } = params;
+    const nAffected = await this.queryBuilder()
+      .update({ name, ownerId })
+      .whereNull("ownerId")
+      .and.where({ id });
 
-    if ((await this.getByThingID(thingID)) == null) {
-      throw new SiteDoesNotExistError();
-    }
-
-    const req = {
-      Key: { thingID },
-      UpdateExpression: "SET #claimedByID = :claimedByID, #name = :name",
-      ExpressionAttributeNames: {
-        "#claimedByID": "claimedByID",
-        "#name": "name"
-      },
-      ExpressionAttributeValues: {
-        ":claimedByID": claimedByID,
-        ":name": name
-      },
-      ConditionExpression: "attribute_not_exists(#claimedByID)"
-    };
-    try {
-      await this.update(req);
-    } catch (err) {
-      if (err.code === "ConditionalCheckFailedException") {
-        throw new SiteAlreadyClaimedError();
-      } else {
-        throw new VError(
-          { cause: err, info: req },
-          "unexpected db error in claim"
-        );
-      }
+    if (nAffected === 0) {
+      throw new SiteAlreadyClaimedError();
     }
   }
 
-  async updateFromEvent(thingID: string, event: SiteEvent) {
-    switch (event.type) {
-      case EventType.PartitionChange:
-        await this.updatePartitionFromEvent(thingID, event);
-        break;
-      case EventType.ZoneChange:
-        await this.updateZoneFromEvent(thingID, event);
-        break;
-      case EventType.SystemTroubleStatus:
-        await this.updateSystemTroubleStatusFromEvent(thingID, event);
-        break;
-    }
-  }
-
-  private async updatePartitionFromEvent(
-    thingID: string,
-    event: PartitionChangeEvent
-  ) {
-    const { partitionID } = event;
-
-    logger.debug({ thingID, event }, "updatePartitionFromEvent");
-
-    try {
-      await this.update({
-        Key: { thingID },
-        UpdateExpression: "SET #parts = :initParts",
-        ExpressionAttributeNames: {
-          "#parts": "partitions"
-        },
-        ExpressionAttributeValues: {
-          ":initParts": {}
-        },
-        ConditionExpression: "attribute_not_exists(#parts)"
-      });
-    } catch (err) {
-      if (err.code !== "ConditionalCheckFailedException") {
-        throw err;
-      }
-    }
-
-    try {
-      await this.update({
-        Key: { thingID },
-        UpdateExpression: "SET #parts.#part = :initPart",
-        ExpressionAttributeNames: {
-          "#parts": "partitions",
-          "#part": partitionID.toString()
-        },
-        ExpressionAttributeValues: {
-          ":initPart": {}
-        },
-        ConditionExpression: "attribute_not_exists(#parts.#part)"
-      });
-    } catch (err) {
-      if (err.code !== "ConditionalCheckFailedException") {
-        throw err;
-      }
-    }
-
-    let props: any;
-
-    switch (event.changeType) {
-      case PartitionChangeEventType.Status:
-        props = { status: event.status };
-        break;
-      case PartitionChangeEventType.KeypadLed:
-        const propName = event.flash ? "keypadLedFlashState" : "keypadLedState";
-        props = { [propName]: event.keypadState };
-        break;
-      case PartitionChangeEventType.TroubleLed:
-        props = { troubleLed: event.on };
-        break;
-      default:
-        throw new Error("unmapped change type:" + JSON.stringify(event));
-    }
-
-    const updateNames: { [k: string]: any } = { "#partitionID": "partitionID" };
-    const updateAttrs: { [k: string]: any } = { ":partitionID": partitionID };
-    for (const [key, val] of Object.entries(props)) {
-      updateAttrs[":" + key] = val;
-      updateNames["#" + key] = key;
-    }
-
-    const updateExp =
-      "SET " +
-      Object.keys(props)
-        .map(key => `#parts.#part.#${key}=:${key}`)
-        .join(",");
-
-    await this.update({
-      Key: { thingID },
-      UpdateExpression: updateExp,
-      ExpressionAttributeNames: {
-        "#parts": "partitions",
-        "#part": partitionID.toString(),
-        ...updateNames
-      },
-      ExpressionAttributeValues: updateAttrs
+  upsert(
+    site: Partial<SiteRecord>,
+    transaction?: Knex.Transaction
+  ): Promise<SiteRecord> {
+    return this.upsertHelper({
+      data: site,
+      constraintFields: ["id"],
+      transaction
     });
   }
 
-  private async updateZoneFromEvent(
-    thingID: string,
-    { zoneID, partitionID, status }: ZoneChangeEvent
-  ) {
-    const zone = { zoneID, partitionID, status };
+  upsertFromEvent(params: {
+    id: string;
+    event: SiteEvent;
+    transaction: Knex.Transaction;
+  }) {
+    const { transaction, id, event } = params;
+    const systemTroubleStatus =
+      event.type === EventType.SystemTroubleStatus ? event.status : undefined;
 
-    logger.debug({ thingID, zone }, "updateZoneFromEvent");
+    const data: Partial<SiteRecord> = { id, systemTroubleStatus };
 
-    try {
-      await this.update({
-        Key: { thingID },
-        UpdateExpression: "SET zones = :initZones",
-        ExpressionAttributeValues: {
-          ":initZones": {}
-        },
-        ConditionExpression: "attribute_not_exists(zones)"
-      });
-    } catch (err) {
-      if (err.code !== "ConditionalCheckFailedException") {
-        throw err;
-      }
-    }
+    logger.debug({ data, event, id }, "SiteModel.upsertFromEvent");
 
-    await this.update({
-      Key: { thingID },
-      UpdateExpression: `SET zones.#zoneID = :zone`,
-      ExpressionAttributeNames: { "#zoneID": zoneID.toString() },
-      ExpressionAttributeValues: {
-        ":zone": zone
-      }
-    });
+    return this.upsert(data, transaction);
   }
 
-  private async updateSystemTroubleStatusFromEvent(
-    thingID: string,
-    event: SystemTroubleStatusEvent
-  ) {
-    const { status } = event;
+  async getSite(id: string): Promise<SiteRecord> {
+    const q = this.queryBuilder()
+      .column(this.knex.raw("sites.*"))
+      .column(
+        this.knex.raw(`(
+          SELECT json_agg(zones) FROM (
+            SELECT * FROM site_zones
+              ORDER BY partition_id, site_zones.id
+          ) AS zones
+        ) AS zones`)
+      )
+      .column(
+        this.knex.raw(`(
+          SELECT json_agg(partitions) FROM (
+            SELECT * FROM site_partitions
+              ORDER BY site_partitions.id
+          ) AS partitions
+        ) AS partitions`)
+      )
+      .select()
+      .where({ "sites.id": id })
+      .orderBy("sites.id");
 
-    logger.debug({ thingID, status }, "updateSystemTroubleStatusFromEvent");
+    logger.debug({ query: q.toQuery() });
 
-    await this.update({
-      Key: { thingID },
-      UpdateExpression: `SET systemTroubleStatus = :status`,
-      ExpressionAttributeValues: {
-        ":status": status
-      }
-    });
+    const [site] = await q;
+    return site;
   }
 }

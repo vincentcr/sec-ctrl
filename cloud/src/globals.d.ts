@@ -1,4 +1,6 @@
 declare module "@koa/cors";
+declare module "aws-sdk-mock";
+
 type Diff<
   T extends string | number | symbol,
   U extends string | number | symbol

@@ -2,9 +2,9 @@ import { Partition } from "./partition";
 import { Zone } from "./zone";
 
 export interface Site {
-  readonly thingID: string;
+  readonly id: string;
   readonly name?: string;
-  readonly claimedByID: string;
+  readonly ownerId: string;
   readonly partitions: { [id: string]: Partition };
   readonly zones: { [id: string]: Zone };
   readonly systemTroubleStatus: string[];

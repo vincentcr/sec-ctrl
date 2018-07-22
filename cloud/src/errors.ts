@@ -1,4 +1,4 @@
-import { VError, Options } from "verror";
+import { Options, VError } from "verror";
 
 export class ValidationError extends VError {
   constructor(params: { dataPath: string; type: string }, message?: string) {
@@ -26,7 +26,10 @@ export class UsernameNotFoundError extends VError {
 
 export class InvalidCredentialsError extends VError {
   constructor(reason = "The password did not match") {
-    super({ name: "PasswordMismatch", info: { httpStatusCode: 401 } }, reason);
+    super(
+      { name: "InvalidCredentials", info: { httpStatusCode: 401 } },
+      reason
+    );
   }
 }
 
