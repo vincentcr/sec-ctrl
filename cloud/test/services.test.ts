@@ -6,7 +6,7 @@ import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import "mocha";
 
-import TestUtils from "./_testUtils";
+import TestUtils, { MockIotPublisher } from "./_testUtils";
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
@@ -25,30 +25,21 @@ import { ZoneStatus } from "../../common/zone";
 import Services from "../src/services";
 
 let services: Services;
-const iotDataMock = [] as any[];
+let mockIotPublisher: MockIotPublisher;
 
 describe("the Services class", () => {
   before(async () => {
+    mockIotPublisher = TestUtils.mkMockIotPublisher();
     AWSMocks.setSDKInstance(AWS);
-    AWSMocks.mock("IotData", "publish", (data: any, callback: any) => {
-      iotDataMock.push(data);
-      callback();
-    });
 
     AWSMocks.mock("Iot", "describeEndpoint", (callback: any) => {
       callback(null, { endpointAddress: "localhost:0" });
     });
-    services = await Services.create();
-  });
-
-  after(async () => {
-    AWSMocks.restore("IotData", "publish");
-    AWSMocks.restore("Iot", "describeEndpoint");
-    services.destroy();
+    services = await Services.create(mockIotPublisher.publish);
   });
 
   afterEach(() => {
-    iotDataMock.splice(0, iotDataMock.length);
+    mockIotPublisher.clear();
   });
 
   describe("the saveEvent method", () => {
@@ -154,16 +145,18 @@ describe("the Services class", () => {
 
       await services.sendCommand({ siteId, cmd });
 
-      expect(iotDataMock.length).to.equal(1);
+      expect(mockIotPublisher.requests.length).to.equal(1);
 
-      const [{ topic, qos, payload }] = iotDataMock;
+      const [{ topic, qos, payload }] = mockIotPublisher.requests;
 
       expect(topic).to.be.a("string");
       expect(topic).to.contain(siteId);
       expect(qos).to.be.a("number");
       expect(payload).to.be.a("string");
 
-      const { expiresAt, ...actualCmd } = userCommandfromJSON(payload);
+      const { expiresAt, ...actualCmd } = userCommandfromJSON(
+        payload as string
+      );
 
       expect(expiresAt).to.be.a("date");
       expect(expiresAt).to.be.gte(dateFns.addSeconds(dateBefore, 30));
@@ -183,10 +176,10 @@ describe("the Services class", () => {
 
       await services.sendCommand({ siteId, cmd, ttlSeconds: 1000 });
 
-      const [{ payload }] = iotDataMock;
+      const [{ payload }] = mockIotPublisher.requests;
 
       expect(payload).to.be.a("string");
-      const { expiresAt } = userCommandfromJSON(payload);
+      const { expiresAt } = userCommandfromJSON(payload as string);
 
       expect(expiresAt).to.be.a("date");
       expect(expiresAt).to.be.gte(dateFns.addSeconds(dateBefore, 1000));

@@ -1,16 +1,14 @@
 import * as bcrypt from "bcrypt";
-import * as config from "config";
 import * as Knex from "knex";
 import * as uuid from "uuid";
 
 import { User } from "../../../common/user";
+import config from "../config";
 import {
-  IDNotFoundError,
   InvalidCredentialsError,
   UserAlreadyExistsError,
   UsernameNotFoundError
 } from "../errors";
-import logger from "../logger";
 import { BaseModel } from "./BaseModel";
 
 export type UserRecord = User & {

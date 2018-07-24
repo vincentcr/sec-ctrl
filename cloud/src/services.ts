@@ -1,47 +1,40 @@
 import AWS = require("aws-sdk");
-import * as config from "config";
 import * as dateFns from "date-fns";
 import * as Knex from "knex";
-import { Site } from "../../common/site";
+
 import { EventType, SiteEvent } from "../../common/siteEvent";
 import {
   UserCommand,
   UserCommandWithExpiration
 } from "../../common/userCommand";
+import config from "./config";
 import { initModels, Models } from "./models";
+
+export type IotPublisher = (
+  req: AWS.IotData.Types.PublishRequest
+) => Promise<void>;
 
 export default class Services {
   readonly models: Models;
-  private readonly iot: AWS.IotData;
+  private readonly iotPublisher: IotPublisher;
 
   static instance: Services;
   static async getInstance() {
     if (this.instance == null) {
-      this.instance = await this.create();
+      const awsPublisher = await mkAwsIotPublisher();
+      this.instance = await this.create(awsPublisher);
     }
     return this.instance;
   }
 
-  static async create() {
-    const [models, iot] = await Promise.all([
-      initModels(config.get("db")),
-      Services.initIotDataPlane()
-    ]);
-    return new Services(models, iot);
+  static async create(iotPublisher: IotPublisher) {
+    const models = await initModels(config.get("db"));
+    return new Services(models, iotPublisher);
   }
 
-  private static async initIotDataPlane() {
-    const iot = new AWS.Iot();
-    const iotEndpointResponse = await iot.describeEndpoint().promise();
-    const iotData = new AWS.IotData({
-      endpoint: iotEndpointResponse.endpointAddress
-    });
-    return iotData;
-  }
-
-  private constructor(models: Models, iot: AWS.IotData) {
+  private constructor(models: Models, iotPublisher: IotPublisher) {
     this.models = models;
-    this.iot = iot;
+    this.iotPublisher = iotPublisher;
   }
 
   async sendCommand(params: {
@@ -54,7 +47,7 @@ export default class Services {
     const cmdWithExpiration: UserCommandWithExpiration = { ...cmd, expiresAt };
     const payload = JSON.stringify(cmdWithExpiration);
 
-    await this.iot.publish({
+    await this.iotPublisher({
       topic: `sec-ctrl/${siteId}/commands`,
       qos: 1,
       payload
@@ -116,4 +109,23 @@ export default class Services {
   async destroy() {
     this.models.destroy();
   }
+}
+
+async function mkAwsIotPublisher(): Promise<IotPublisher> {
+  const iotData = await initIotDataPlane();
+
+  async function publish(req: AWS.IotData.Types.PublishRequest) {
+    await iotData.publish(req).promise();
+  }
+
+  return publish;
+}
+
+async function initIotDataPlane() {
+  const iot = new AWS.Iot();
+  const iotEndpointResponse = await iot.describeEndpoint().promise();
+  const iotData = new AWS.IotData({
+    endpoint: iotEndpointResponse.endpointAddress
+  });
+  return iotData;
 }

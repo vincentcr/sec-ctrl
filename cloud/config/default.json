@@ -1,4 +1,7 @@
 {
+  "http": {
+    "port": 3231
+  },
   "db": {
     "host": "localhost",
     "port": 5432,
@@ -7,7 +10,7 @@
     "password": "sec_ctrl_dev123"
   },
   "security": {
-    "bcryptRounds": 10
+    "bcryptRounds": 8
   },
   "logging": {
     "level": "debug"

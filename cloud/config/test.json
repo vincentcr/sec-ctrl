@@ -1,4 +1,7 @@
 {
+  "http": {
+    "port": 3232
+  },
   "db": {
     "port": "2346",
     "database": "sec_ctrl_test",
@@ -9,6 +12,6 @@
     "bcryptRounds": 1
   },
   "logging": {
-    "level": "info"
+    "level": "error"
   }
 }
