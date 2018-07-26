@@ -232,7 +232,7 @@ describe("the Site model", () => {
         zones
       };
 
-      const actual = await models.Sites.getSite(site.id);
+      const [actual] = await models.Sites.getSites(site.id);
 
       expect(actual).to.deep.equal(expected);
     });

@@ -63,7 +63,7 @@ export class SiteModel extends BaseModel<SiteRecord> {
     return this.upsert(data, transaction);
   }
 
-  async getSite(id: string): Promise<SiteRecord> {
+  async getSites(...ids: string[]): Promise<SiteRecord[]> {
     const q = this.queryBuilder()
       .column(this.knex.raw("sites.*"))
       .column(
@@ -83,12 +83,9 @@ export class SiteModel extends BaseModel<SiteRecord> {
         ) AS partitions`)
       )
       .select()
-      .where({ "sites.id": id })
+      .whereIn("sites.id", ids)
       .orderBy("sites.id");
 
-    logger.debug({ query: q.toQuery() });
-
-    const [site] = await q;
-    return site;
+    return await q;
   }
 }
