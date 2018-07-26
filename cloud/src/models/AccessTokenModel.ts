@@ -38,4 +38,10 @@ export class AccessTokenModel extends BaseModel<AccessToken> {
       .replace(/=/g, "");
     return token;
   }
+
+  async delete(token: string): Promise<void> {
+    await this.queryBuilder()
+      .delete()
+      .where({ token });
+  }
 }

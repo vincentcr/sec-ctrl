@@ -53,6 +53,8 @@ CREATE TABLE site_events(
   event JSONB NOT NULL
 );
 
+CREATE INDEX site_events_site_id ON site_events(site_id);
+
 ALTER SEQUENCE site_events_id_seq RESTART WITH 1042;
 
 COMMIT;

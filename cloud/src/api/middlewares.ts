@@ -37,17 +37,18 @@ export async function setupMiddlewares({
     },
 
     async authenticate(ctx: Router.IRouterContext, next: () => Promise<any>) {
-      const tok = findRequestAuthToken(ctx);
-      if (tok == null) {
+      const token = findRequestAuthToken(ctx);
+      if (token == null) {
         return next();
       }
 
-      const user = await models.Users.authenticateByToken(tok);
+      const user = await models.Users.authenticateByToken(token);
       if (user == null) {
         throw new InvalidCredentialsError("invalid token");
       }
 
       ctx.state.user = user;
+      ctx.state.token = token;
       return next();
     },
 
@@ -64,7 +65,7 @@ export async function setupMiddlewares({
 
 function findRequestAuthToken(ctx: Context): string | undefined {
   if (typeof ctx.headers.authorization === "string") {
-    const match = /^Token (.+)$/.exec(ctx.headers.authorization);
+    const match = /^Bearer (.+)$/.exec(ctx.headers.authorization);
     if (match != null) {
       return match[1];
     }

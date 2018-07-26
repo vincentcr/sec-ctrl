@@ -50,8 +50,9 @@ function setupUsersRoutes({ services, app, middlewares }: RouteBuilderParam) {
     ctx.response.body = user;
   });
 
-  router.post("/users/:id/signout", authorize, async ctx => {
-    throw new Error("not implemented :(");
+  router.post("/me/signout", authorize, async ctx => {
+    await models.AccessTokens.delete(ctx.state.token);
+    ctx.response.status = 204;
   });
 
   app.use(router.routes()).use(router.allowedMethods());
