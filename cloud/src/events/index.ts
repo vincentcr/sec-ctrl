@@ -1,4 +1,4 @@
-import { Context, DynamoDBStreamEvent } from "aws-lambda";
+import { Context } from "aws-lambda";
 
 import { SiteEvent } from "../../../common/siteEvent";
 import logger from "../logger";

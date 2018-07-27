@@ -11,10 +11,7 @@ import { UserModel } from "../../src/models/UserModel";
 import { PartitionStatus } from "../../../common/partition";
 import { Site } from "../../../common/site";
 import { ZoneStatus } from "../../../common/zone";
-import {
-  SitePartitionModel,
-  SitePartitionRecord
-} from "../../src/models/SitePartitionModel";
+import { SitePartitionModel } from "../../src/models/SitePartitionModel";
 import { SiteZoneModel, SiteZoneRecord } from "../../src/models/SiteZoneModel";
 import TestUtils from "../_testUtils";
 

@@ -1,4 +1,4 @@
-import { Options, VError } from "verror";
+import { VError } from "verror";
 
 export class ValidationError extends VError {
   constructor(params: { dataPath: string; type: string }, message?: string) {

@@ -11,7 +11,7 @@ import {
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
-import { EventType, InfoEvent, SiteEvent } from "../../../common/siteEvent";
+import { EventType, SiteEvent } from "../../../common/siteEvent";
 import { ZoneStatus } from "../../../common/zone";
 
 import TestUtils from "../_testUtils";

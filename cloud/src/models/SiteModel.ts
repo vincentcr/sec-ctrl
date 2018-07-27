@@ -2,11 +2,9 @@ import * as Knex from "knex";
 
 import { Site } from "../../../common/site";
 import { EventType, SiteEvent } from "../../../common/siteEvent";
-import { Item } from "../../node_modules/aws-sdk/clients/mediastoredata";
 import { SiteAlreadyClaimedError } from "../errors";
 import logger from "../logger";
 import { BaseModel } from "./BaseModel";
-import { mapObjectKeys } from "./keyMapper";
 
 export type SiteRecord = Omit<Omit<Site, "partitions">, "zones">;
 

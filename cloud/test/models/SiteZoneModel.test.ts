@@ -1,7 +1,5 @@
 import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
-import * as Knex from "knex";
-import * as _ from "lodash";
 import "mocha";
 
 import { SiteModel } from "../../src/models/SiteModel";

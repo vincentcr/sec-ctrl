@@ -1,4 +1,4 @@
-import { APIGatewayEvent, Context, DynamoDBStreamEvent } from "aws-lambda";
+import { APIGatewayEvent, Context } from "aws-lambda";
 
 import * as api from "./api/lambda";
 import * as events from "./events";

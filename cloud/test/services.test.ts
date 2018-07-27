@@ -1,7 +1,5 @@
-import * as AWS from "aws-sdk";
 import * as dateFns from "date-fns";
 
-import * as AWSMocks from "aws-sdk-mock";
 import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import "mocha";
@@ -30,11 +28,6 @@ let mockIotPublisher: MockIotPublisher;
 describe("the Services class", () => {
   before(async () => {
     mockIotPublisher = TestUtils.mkMockIotPublisher();
-    AWSMocks.setSDKInstance(AWS);
-
-    AWSMocks.mock("Iot", "describeEndpoint", (callback: any) => {
-      callback(null, { endpointAddress: "localhost:0" });
-    });
     services = await Services.create(mockIotPublisher.publish);
   });
 

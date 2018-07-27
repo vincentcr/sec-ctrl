@@ -1,4 +1,5 @@
 // tslint:disable:no-console
+import * as childProcess from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import * as util from "util";
@@ -8,7 +9,6 @@ import * as config from "config";
 import * as Knex from "knex";
 import * as uuid from "uuid/v4";
 
-import * as AWSMocks from "aws-sdk-mock";
 import * as chai from "chai";
 import "mocha";
 
@@ -19,6 +19,7 @@ import Services, { IotPublisher } from "../src/services";
 
 const { expect } = chai;
 const readFile = util.promisify(fs.readFile);
+const exec = util.promisify(childProcess.exec);
 
 export interface MockIotPublisher {
   requests: AWS.IotData.Types.PublishRequest[];
@@ -30,7 +31,6 @@ export interface MockIotPublisher {
 let _knex: Knex;
 
 before(async () => {
-  const knex = TestUtils.getConnection();
   await TestUtils.resetDB();
 });
 
