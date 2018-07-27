@@ -5,7 +5,7 @@ export interface Site {
   readonly id: string;
   readonly name?: string;
   readonly ownerId: string;
-  readonly partitions: { [id: string]: Partition };
-  readonly zones: { [id: string]: Zone };
+  readonly partitions: Partition[];
+  readonly zones: Zone[];
   readonly systemTroubleStatus: string[];
 }

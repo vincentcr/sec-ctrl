@@ -9,6 +9,7 @@ import { SiteModel, SiteRecord } from "../../src/models/SiteModel";
 import { UserModel } from "../../src/models/UserModel";
 
 import { PartitionStatus } from "../../../common/partition";
+import { Site } from "../../../common/site";
 import { ZoneStatus } from "../../../common/zone";
 import {
   SitePartitionModel,
@@ -185,54 +186,49 @@ describe("the Site model", () => {
     });
   });
 
-  describe("getSite", () => {
-    let site: SiteRecord;
-    let partitions: SitePartitionRecord[];
-    let zones: SiteZoneRecord[];
+  describe("getPopulatedSites", () => {
+    let sites: Site[];
+
     before(async () => {
-      site = await models.Sites.upsert({ id: TestUtils.genUuid() });
-      partitions = await Promise.all([
-        models.SitePartitions.upsert({
-          siteId: site.id,
-          id: 1,
-          status: PartitionStatus.Armed
-        }),
-        models.SitePartitions.upsert({
-          siteId: site.id,
-          id: 2,
-          status: PartitionStatus.InAlarm
+      sites = await Promise.all(
+        _.times(3, async siteNum => {
+          const site = await models.Sites.upsert({ id: TestUtils.genUuid() });
+
+          return {
+            ...site,
+
+            partitions: (await Promise.all(
+              _.times(siteNum + 1, partId =>
+                models.SitePartitions.upsert({
+                  siteId: site.id,
+                  id: partId,
+                  status: _.shuffle([
+                    PartitionStatus.Armed,
+                    PartitionStatus.InAlarm
+                  ])[0]
+                })
+              )
+            )).map(p => _.omit(p, "siteId")),
+
+            zones: (await Promise.all(
+              _.times(siteNum + 2, partId =>
+                models.SiteZones.upsert({
+                  siteId: site.id,
+                  id: partId * 8,
+                  partitionId: partId,
+                  status: _.shuffle([ZoneStatus.Open, ZoneStatus.Alarm])[0]
+                })
+              )
+            )).map(p => _.omit(p, "siteId"))
+          };
         })
-      ]);
-      zones = await Promise.all([
-        models.SiteZones.upsert({
-          siteId: site.id,
-          id: 1,
-          partitionId: 1,
-          status: ZoneStatus.Open
-        }),
-        models.SiteZones.upsert({
-          siteId: site.id,
-          id: 2,
-          partitionId: 1,
-          status: ZoneStatus.Open
-        }),
-        models.SiteZones.upsert({
-          siteId: site.id,
-          id: 8,
-          partitionId: 2,
-          status: ZoneStatus.Alarm
-        })
-      ]);
+      );
     });
 
-    it("returns a site with embedded zones and partitions", async () => {
-      const expected = {
-        ...site,
-        partitions,
-        zones
-      };
+    it("returns a site with populated zones and partitions", async () => {
+      const expected = sites[1];
 
-      const [actual] = await models.Sites.getSites(site.id);
+      const [actual] = await models.Sites.getPopulatedSites(expected.id);
 
       expect(actual).to.deep.equal(expected);
     });

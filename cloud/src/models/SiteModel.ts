@@ -15,27 +15,6 @@ export class SiteModel extends BaseModel<SiteRecord> {
     super(knex, "sites");
   }
 
-  async getByID(id: string): Promise<Site | undefined> {
-    const rows = await this.queryBuilder().where({ id });
-    return rows[0];
-  }
-
-  async claim(params: {
-    id: string;
-    ownerId: string;
-    name: string;
-  }): Promise<void> {
-    const { id, ownerId, name } = params;
-    const nAffected = await this.queryBuilder()
-      .update({ name, ownerId })
-      .whereNull("ownerId")
-      .and.where({ id });
-
-    if (nAffected === 0) {
-      throw new SiteAlreadyClaimedError();
-    }
-  }
-
   upsert(
     site: Partial<SiteRecord>,
     transaction?: Knex.Transaction
@@ -63,13 +42,38 @@ export class SiteModel extends BaseModel<SiteRecord> {
     return this.upsert(data, transaction);
   }
 
-  async getSites(...ids: string[]): Promise<SiteRecord[]> {
+  async claim(params: {
+    id: string;
+    ownerId: string;
+    name: string;
+  }): Promise<void> {
+    const { id, ownerId, name } = params;
+    const nAffected = await this.queryBuilder()
+      .update({ name, ownerId })
+      .whereNull("ownerId")
+      .and.where({ id });
+
+    if (nAffected === 0) {
+      throw new SiteAlreadyClaimedError();
+    }
+  }
+
+  async getByID(id: string): Promise<Site | undefined> {
+    const rows = await this.queryBuilder().where({ id });
+    return rows[0];
+  }
+
+  async getPopulatedSites(...ids: string[]): Promise<SiteRecord[]> {
     const q = this.queryBuilder()
       .column(this.knex.raw("sites.*"))
       .column(
         this.knex.raw(`(
           SELECT json_agg(zones) FROM (
-            SELECT * FROM site_zones
+            SELECT  id,
+                    partition_id,
+                    status
+              FROM site_zones
+              WHERE site_zones.site_id = sites.id
               ORDER BY partition_id, site_zones.id
           ) AS zones
         ) AS zones`)
@@ -77,7 +81,13 @@ export class SiteModel extends BaseModel<SiteRecord> {
       .column(
         this.knex.raw(`(
           SELECT json_agg(partitions) FROM (
-            SELECT * FROM site_partitions
+            SELECT  id,
+                    keypad_led_flash_state,
+                    keypad_led_state,
+                    status,
+                    trouble_state_led
+              FROM site_partitions
+              WHERE site_partitions.site_id = sites.id
               ORDER BY site_partitions.id
           ) AS partitions
         ) AS partitions`)
