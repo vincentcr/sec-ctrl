@@ -1,4 +1,5 @@
 import * as Knex from "knex";
+import * as VError from "verror";
 
 import { Partition } from "../../../common/partition";
 import {
@@ -53,7 +54,10 @@ export class SitePartitionModel extends BaseModel<SitePartitionRecord> {
         partition.troubleStateLed = event.on;
         break;
       default:
-        throw new Error("unmapped change type:" + JSON.stringify(event));
+        throw new VError(
+          { name: "UnexpectedPartitionChangeType", info: { event } },
+          "Unexpected change type"
+        );
     }
 
     return this.upsert(partition, transaction);
