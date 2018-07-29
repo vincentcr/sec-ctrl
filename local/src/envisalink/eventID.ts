@@ -2,11 +2,15 @@ import * as crypto from "crypto";
 import * as _ from "lodash";
 import * as os from "os";
 
+// This is copied from Mongo's ObjectID implementation.
+// It gives us an id that is time-sorted, with additional
+// machine-specific bits to ensure uniquess accross mulitple machines.
+
 export default function generateID() {
   const machineID = state.machineID;
   const time = ~~(Date.now() / 1000);
   const pid = state.pid;
-  const inc = incrementCounter();
+  const inc = state.counter++;
 
   // Buffer used
   const buffer = new Buffer(12);
@@ -28,10 +32,6 @@ export default function generateID() {
   buffer[9] = (inc >> 16) & 0xff;
   // Return the buffer
   return buffer.toString("hex");
-}
-
-function incrementCounter() {
-  return state.counter++;
 }
 
 function initMachineID() {
