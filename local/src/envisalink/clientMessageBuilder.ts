@@ -19,27 +19,33 @@ export function fromUserCommand(cmd: UserCommand) {
     case UserCommandCode.ArmAway:
       return new ClientMessage(
         ClientCode.PartitionArmControlAway,
-        Buffer.from(cmd.partitionId)
+        Buffer.from(cmd.partitionId.toString())
       );
     case UserCommandCode.ArmStay:
       return new ClientMessage(
         ClientCode.PartitionArmControlStayArm,
-        Buffer.from(cmd.partitionId)
+        Buffer.from(cmd.partitionId.toString())
       );
     case UserCommandCode.ArmWithZeroEntryDelay:
       return new ClientMessage(
         ClientCode.PartitionArmControlZeroEntryDelay,
-        Buffer.from(cmd.partitionId)
+        Buffer.from(cmd.partitionId.toString())
       );
     case UserCommandCode.ArmWithPIN:
       return new ClientMessage(
         ClientCode.PartitionArmControlWithCode,
-        Buffer.concat([Buffer.from(cmd.partitionId), Buffer.from(cmd.pin)])
+        Buffer.concat([
+          Buffer.from(cmd.partitionId.toString()),
+          Buffer.from(cmd.pin)
+        ])
       );
     case UserCommandCode.Disarm:
       return new ClientMessage(
         ClientCode.PartitionDisarmControl,
-        Buffer.concat([Buffer.from(cmd.partitionId), Buffer.from(cmd.pin)])
+        Buffer.concat([
+          Buffer.from(cmd.partitionId.toString()),
+          Buffer.from(cmd.pin)
+        ])
       );
     case UserCommandCode.Panic:
       return new ClientMessage(

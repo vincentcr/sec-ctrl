@@ -3,7 +3,7 @@ import {
   AlarmEvent,
   EventType,
   InfoEvent,
-  PartitionChangeEventType,
+  PartitionChangeType,
   PartitionEvent,
   PartitionKeypadLedStateChangeEvent,
   PartitionStatusChangeEvent,
@@ -18,7 +18,6 @@ import { ZoneStatus } from "../../../common/zone";
 import { ServerCode } from "./codes";
 import { decodeHexByte, decodeIntCode } from "./encodings";
 import { errorCodeDescriptions } from "./errorCode";
-import generateID from "./eventId";
 import { KeypadLedState } from "./keypadLedState";
 import { ServerMessage } from "./message";
 import { SystemTroubleStatus } from "./systemTroubleStatus";
@@ -116,8 +115,7 @@ function buildSystemErrorEvent(msg: ServerMessage): SystemErrorEvent {
   const errCode = decodeIntCode(msg.data);
   const errDesc = errorCodeDescriptions[errCode];
   return {
-    date: new Date(),
-    id: generateID(),
+    recordedAt: new Date(),
     type: EventType.SystemError,
     code: errDesc
   };
@@ -125,8 +123,7 @@ function buildSystemErrorEvent(msg: ServerMessage): SystemErrorEvent {
 
 function buildInfoEvent(msg: ServerMessage): InfoEvent {
   return {
-    date: new Date(),
-    id: generateID(),
+    recordedAt: new Date(),
     type: EventType.Info,
     code: ServerCode[msg.code],
     data: msg.data.toString()
@@ -135,8 +132,7 @@ function buildInfoEvent(msg: ServerMessage): InfoEvent {
 
 function buildTroubleEvent(msg: ServerMessage): TroubleEvent {
   return {
-    date: new Date(),
-    id: generateID(),
+    recordedAt: new Date(),
     type: EventType.Trouble,
     code: ServerCode[msg.code]
   };
@@ -144,8 +140,7 @@ function buildTroubleEvent(msg: ServerMessage): TroubleEvent {
 
 function buildAlarmEvent(msg: ServerMessage): AlarmEvent {
   return {
-    date: new Date(),
-    id: generateID(),
+    recordedAt: new Date(),
     type: EventType.Alarm,
     code: ServerCode[msg.code]
   };
@@ -156,8 +151,7 @@ function buildTroubleStatusEvent(msg: ServerMessage): SystemTroubleStatusEvent {
   const status = SystemTroubleStatus.toStrings(flags);
 
   return {
-    date: new Date(),
-    id: generateID(),
+    recordedAt: new Date(),
     type: EventType.SystemTroubleStatus,
     status
   };
@@ -170,10 +164,9 @@ function buildPartitionStatusChangeEvent(
   const partitionId = decodeIntCode(msg.data);
 
   return {
-    date: new Date(),
-    id: generateID(),
+    recordedAt: new Date(),
     type: EventType.PartitionChange,
-    changeType: PartitionChangeEventType.Status,
+    changeType: PartitionChangeType.Status,
     partitionId,
     status
   };
@@ -188,10 +181,9 @@ function buildPartitionKeypadLedStateChangeEvent(
   const keypadState = KeypadLedState.toStrings(flags);
 
   return {
-    date: new Date(),
-    id: generateID(),
+    recordedAt: new Date(),
     type: EventType.PartitionChange,
-    changeType: PartitionChangeEventType.KeypadLed,
+    changeType: PartitionChangeType.KeypadLed,
     partitionId,
     keypadState,
     flash
@@ -205,10 +197,9 @@ function buildPartitionTroubleLedChangeEvent(
   const partitionId = decodeIntCode(msg.data);
 
   return {
-    date: new Date(),
-    id: generateID(),
+    recordedAt: new Date(),
     type: EventType.PartitionChange,
-    changeType: PartitionChangeEventType.TroubleLed,
+    changeType: PartitionChangeType.TroubleLed,
     partitionId,
     on
   };
@@ -237,8 +228,7 @@ function buildZoneStatusChangeEvent(
   }
 
   return {
-    date: new Date(),
-    id: generateID(),
+    recordedAt: new Date(),
     type: EventType.ZoneChange,
     zoneId,
     partitionId,
@@ -250,8 +240,7 @@ function buildPartitionEvent(msg: ServerMessage): PartitionEvent {
   const partitionId = decodeIntCode(msg.data);
 
   return {
-    date: new Date(),
-    id: generateID(),
+    recordedAt: new Date(),
     type: EventType.Partition,
     partitionId,
     code: ServerCode[msg.code]
@@ -263,8 +252,7 @@ function buildUserPartitionEvent(msg: ServerMessage): PartitionEvent {
   const userId = msg.data.slice(1).toString();
 
   return {
-    date: new Date(),
-    id: generateID(),
+    recordedAt: new Date(),
     type: EventType.Partition,
     partitionId,
     userId,
