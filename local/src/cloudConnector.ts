@@ -67,7 +67,7 @@ export class CloudConnector {
 
   publishEvent(evt: SiteEvent) {
     if (this.device == null) {
-      throw new Error("device not connected. call start() first");
+      throw new Error("BUG: device not connected. call start() first");
     }
     this.logger.debug(evt, "publish to ", this._mkTopic("events"));
     this.device.publish(

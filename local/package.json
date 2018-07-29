@@ -18,6 +18,7 @@
     "@types/lodash": "^4.14.110",
     "@types/node": "^10.1.2",
     "@types/rsmq": "^0.3.27",
+    "@types/verror": "^1.10.3",
     "prettier": "^1.13.4",
     "ts-node": "^6.1.0",
     "tslint": "^5.10.0",
@@ -33,6 +34,7 @@
     "mqtt-level-store": "^2.0.0",
     "nodemon": "^1.17.5",
     "rsmq": "^0.8.3",
-    "rsmq-promise": "^1.0.1"
+    "rsmq-promise": "^1.0.1",
+    "verror": "^1.10.0"
   }
 }

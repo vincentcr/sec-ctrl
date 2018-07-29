@@ -1,3 +1,5 @@
+import * as VError from "verror";
+
 import { ClientCode, ServerCode } from "./codes";
 import { decodeIntCode, encodeIntCode } from "./encodings";
 
@@ -44,7 +46,10 @@ function mkMessageClass<TCode extends number>(
 
     static decode(bytes: Buffer): Message {
       if (bytes.length < 5) {
-        throw new Error(`Got ${bytes.length} bytes, need at least 5`);
+        throw new VError(
+          { name: "MessageTooSmall", info: { bytes } },
+          "Message too small, need at least 5 bytes"
+        );
       }
 
       // CODE-DATA-CHECKSUM
@@ -62,9 +67,16 @@ function mkMessageClass<TCode extends number>(
       const actualChecksum = computeChecksum(bytes.slice(0, dataEnd));
 
       if (expectedChecksum.toLowerCase() !== actualChecksum.toLowerCase()) {
-        throw new Error(
-          `failed to decode message ${bytes}: ` +
-            `data ${data}, expected checksum ${expectedChecksum}, actual ${actualChecksum}`
+        throw new VError(
+          {
+            name: "MessageChecksumMismatch",
+            info: {
+              bytes,
+              expectedChecksum,
+              actualChecksum
+            }
+          },
+          "Failed to decode message: checksum mismatch"
         );
       }
 

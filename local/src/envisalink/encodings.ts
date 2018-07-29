@@ -1,3 +1,5 @@
+import * as VError from "verror";
+
 export const CODE_LEN = 3;
 
 // EncodeIntCode encodes an integer as a tpi code
@@ -10,7 +12,10 @@ export function decodeIntCode(codeBytes: Buffer): number {
   const codeString = codeBytes.toString("ascii");
   const codeInt = parseInt(codeString, 10);
   if (isNaN(codeInt) || codeInt < 0) {
-    throw new Error(`code must be a non-negative number; got: ${codeString}`);
+    throw new VError(
+      { name: "MessageInvalidCode", info: { code: codeString } },
+      "code must be a non-negative number"
+    );
   }
   return codeInt;
 }

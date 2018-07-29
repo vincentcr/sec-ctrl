@@ -1,5 +1,7 @@
 import { EventEmitter } from "events";
 
+import * as VError from "verror";
+
 import { LocalConfig } from "./config";
 import { ClientCode, ServerCode } from "./envisalink/codes";
 import { ClientMessage, ServerMessage } from "./envisalink/message";
@@ -83,9 +85,15 @@ export class LocalSite {
         this.sendMessage(loginMsg);
         break;
       case LoginRes.Failure:
-        throw new Error("Panic! Password rejected");
+        throw new VError(
+          { name: "PasswordRejected" },
+          "Panic! Password rejected"
+        );
       default:
-        throw new Error("unknown login res: " + msg.data);
+        throw new VError(
+          { name: "UnexpectedLogingResult", info: { message: msg.toString() } },
+          "Unexpected login result"
+        );
     }
   }
 

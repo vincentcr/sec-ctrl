@@ -1,6 +1,8 @@
 import { EventEmitter } from "events";
 import { Socket } from "net";
 
+import * as VError from "verror";
+
 import {
   ClientMessage,
   ServerMessage
@@ -117,8 +119,9 @@ function* splitBufferBySep(buf: Buffer) {
   while (idx < buf.length) {
     const nextIdx = buf.indexOf(SEP, idx);
     if (nextIdx < 0) {
-      throw new Error(
-        `Invalid data: crlf not found after index ${idx} in ${buf}`
+      throw new VError(
+        { name: "MissingCrLf", info: { idx, buf, nextIdx } },
+        "Invalid data: CR/LF not found in buffer"
       );
     }
     const msgBuf = buf.slice(idx, nextIdx);
