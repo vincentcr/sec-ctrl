@@ -1,26 +1,3 @@
-import * as _ from "lodash";
-
-class Code {
-  readonly name: string;
-  readonly value: number;
-  constructor(name: string, value: number) {
-    this.name = name;
-    this.value = value;
-  }
-}
-
-const clientCodes = [new Code("Poll", 0), new Code("StatusReport", 1)];
-
-const clientCodesByName = _.keyBy(clientCodes, "name");
-const clientCodesByValue = _.keyBy(clientCodes, "value");
-
-enum Foo {
-  x = 1,
-  y = 40
-}
-
-// Foo.constructor;
-
 export enum ClientCode {
   Poll = 0,
   StatusReport = 1,
