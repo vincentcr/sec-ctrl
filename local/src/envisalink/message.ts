@@ -23,13 +23,12 @@ function mkMessageClass<TCode extends number>(
       const len = CODE_LEN + this.data.length + CHECKSUM_LEN;
       const bytes = Buffer.allocUnsafe(len);
 
-      const encodedCode = encodeIntCode(this.code);
-      bytes.write(encodedCode);
+      const codeOffset = encodeIntCode(this.code, bytes);
       if (this.data != null) {
-        this.data.copy(bytes, encodedCode.length);
+        this.data.copy(bytes, codeOffset);
       }
 
-      const dataEndIdx = this.data.length + encodedCode.length;
+      const dataEndIdx = this.data.length + codeOffset;
       const checksum = computeChecksum(bytes.slice(0, dataEndIdx));
 
       bytes.write(checksum, dataEndIdx);
