@@ -5,14 +5,13 @@ import * as path from "path";
 import * as util from "util";
 
 import * as AWS from "aws-sdk";
-import * as config from "config";
+import * as chai from "chai";
 import * as Knex from "knex";
+import "mocha";
 import * as uuid from "uuid/v4";
 
-import * as chai from "chai";
-import "mocha";
-
 import createApp from "../src/api/app";
+import config from "../src/config";
 import { connect, Models } from "../src/models";
 import { BaseModel } from "../src/models/BaseModel";
 import Services, { IotPublisher } from "../src/services";

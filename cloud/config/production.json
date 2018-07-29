@@ -1,0 +1,8 @@
+{
+  "db": {
+    "host": "localhost",
+    "port": 5432,
+    "database": "sec_ctrl_prod",
+    "user": "sec_ctrl_prod"
+  }
+}
