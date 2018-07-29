@@ -43,7 +43,7 @@ function mkMessageClass<TCode extends number>(
       );
     }
 
-    static decode(bytes: Buffer): Message {
+    static decode(bytes: Buffer) {
       if (bytes.length < 5) {
         throw new VError(
           { name: "MessageTooSmall", info: { bytes } },
@@ -81,7 +81,7 @@ function mkMessageClass<TCode extends number>(
 
       const code = decodeIntCode(codeBytes) as TCode;
 
-      const msg = new Message(code, data);
+      const msg = new this(code, data);
 
       return msg;
     }
