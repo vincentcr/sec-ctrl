@@ -14,7 +14,7 @@ export default class Flags {
     this.definitions = definitions;
   }
 
-  toStrings(flagBits: number) {
+  toStrings(flagBits: number): string[] {
     const flags = this.decompose(flagBits);
     return flags.map(({ desc }) => desc);
   }

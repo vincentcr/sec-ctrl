@@ -6,10 +6,12 @@ import { decodeIntCode, encodeIntCode } from "./encodings";
 const CODE_LEN = 3;
 const CHECKSUM_LEN = 2;
 
-function mkMessageClass<TCode extends number>(
-  codeDesc: (code: TCode) => string
+type CodeDescriptor<TCode> = (code: TCode) => string;
+
+export function makeMessageClass<TCode extends number>(
+  codeDescriptor: CodeDescriptor<TCode>
 ) {
-  return class Message {
+  class Message {
     readonly code: TCode;
     readonly data: Buffer;
 
@@ -39,7 +41,7 @@ function mkMessageClass<TCode extends number>(
     toString() {
       return (
         `${this.constructor.name} ` +
-        `{ code: ${codeDesc(this.code)}; data: ${this.data} }`
+        `{ code: ${codeDescriptor(this.code)}; data: ${this.data} }`
       );
     }
 
@@ -85,7 +87,9 @@ function mkMessageClass<TCode extends number>(
 
       return msg;
     }
-  };
+  }
+
+  return Message;
 }
 
 function computeChecksum(bytes: Buffer): string {
@@ -99,10 +103,9 @@ function computeChecksum(bytes: Buffer): string {
   return checksum;
 }
 
-export class ServerMessage extends mkMessageClass<ServerCode>(
-  (c: ServerCode) => ServerCode[c]
+export class ServerMessage extends makeMessageClass<ServerCode>(
+  c => ServerCode[c]
 ) {}
-
-export class ClientMessage extends mkMessageClass<ClientCode>(
+export class ClientMessage extends makeMessageClass<ClientCode>(
   c => ClientCode[c]
 ) {}
