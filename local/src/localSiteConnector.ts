@@ -11,6 +11,8 @@ import createLogger from "./logger";
 const logger = createLogger(__filename);
 
 const SEP = new Buffer("\r\n");
+const MAX_BACKOFF_EXP = 16; // ~= max 1 minute backoff
+const MAX_ATTEMPTS = 1 << 16;
 
 export class LocalSiteConnector {
   private readonly port: number;
@@ -49,7 +51,16 @@ export class LocalSiteConnector {
   }
 
   private connect() {
-    this.connAttempts += 1;
+    if (this.connAttempts >= MAX_ATTEMPTS) {
+      throw new VError(
+        {
+          name: "MaxConnectionAttemptsReached",
+          info: { attempts: this.connAttempts }
+        },
+        "Maximum connection attempts reach, givin up"
+      );
+    }
+    this.connAttempts++;
     this.socket.connect(
       this.port,
       this.hostname
@@ -57,8 +68,8 @@ export class LocalSiteConnector {
   }
 
   private waitAndReconnect() {
-    const backoff = Math.pow(2, Math.min(16, this.connAttempts));
-    const delay = 1000 + Math.random() * backoff;
+    const backoff = 1 << Math.min(MAX_BACKOFF_EXP, this.connAttempts);
+    const delay = 500 + Math.random() * backoff;
     logger.info(
       `Disconnected, sleeping for ${delay} millis before attempting reconnect...`
     );
