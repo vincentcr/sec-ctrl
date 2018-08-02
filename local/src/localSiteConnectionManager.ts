@@ -11,7 +11,22 @@ const MAX_ATTEMPTS = 1 << 10;
 const MAX_BACKOFF_EXP = 16;
 const MAX_WRITE_BUFFER_SIZE = 1 << 16;
 
-export class LocalSiteConnectionManager {
+type DataHandler = (data: Buffer) => void;
+
+export interface LocalSiteConnectionManager {
+  start(): void;
+  onData(handler: DataHandler): void;
+  sendData(data: Buffer): void;
+}
+
+export function createLocalSiteConnectionManager(
+  port: number,
+  hostname: string
+): LocalSiteConnectionManager {
+  return new LocalSiteConnectionManagerImpl(port, hostname);
+}
+
+class LocalSiteConnectionManagerImpl {
   private readonly port: number;
   private readonly hostname: string;
   private readonly socket = new Socket();
@@ -77,7 +92,7 @@ export class LocalSiteConnectionManager {
     setTimeout(() => this.connect(), delay);
   }
 
-  onData(handler: (data: Buffer) => void) {
+  onData(handler: DataHandler) {
     this.emitter.on("data", handler);
   }
 

@@ -7,13 +7,7 @@ const { expect } = chai;
 
 import { makeMessageClass } from "../../src/envisalink/message";
 
-type MessageTestCase = {
-  readonly bytes: Buffer;
-  readonly code: number;
-  readonly data?: Buffer;
-};
-
-const testCases: MessageTestCase[] = [
+const testCases = [
   {
     bytes: Buffer.from("012helloa7"),
     code: 12,

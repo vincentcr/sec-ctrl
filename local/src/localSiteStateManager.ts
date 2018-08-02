@@ -16,7 +16,9 @@ export class LocalSiteStateManager {
   private readonly connectionManager: LocalSiteConnectionManager;
   private readonly emitter = new EventEmitter();
   private readonly statusRefreshIntervalMs: number;
+  private statusRefreshInterval?: NodeJS.Timer;
   private readonly keepAliveIntervalMs: number;
+  private keepAliveInterval?: NodeJS.Timer;
   private loggedIn: boolean = false;
   private readonly logger: Logger;
   private messageParser = new MessageParser();
@@ -39,7 +41,7 @@ export class LocalSiteStateManager {
     this.connectionManager.onData(msg => this.processData(msg));
 
     if (this.statusRefreshIntervalMs > 0) {
-      setInterval(() => {
+      this.statusRefreshInterval = setInterval(() => {
         if (this.loggedIn) {
           this.sendMessage(new ClientMessage(ClientCode.StatusReport));
         }
@@ -47,11 +49,20 @@ export class LocalSiteStateManager {
     }
 
     if (this.keepAliveIntervalMs > 0) {
-      setInterval(() => {
+      this.keepAliveInterval = setInterval(() => {
         if (this.loggedIn) {
           this.sendMessage(new ClientMessage(ClientCode.Poll));
         }
       }, this.keepAliveIntervalMs);
+    }
+  }
+
+  shutdown() {
+    if (this.statusRefreshInterval != null) {
+      clearInterval(this.statusRefreshInterval);
+    }
+    if (this.keepAliveInterval != null) {
+      clearInterval(this.keepAliveInterval);
     }
   }
 
@@ -128,41 +139,35 @@ export class MessageParser {
   consume(data: Buffer): ServerMessage[] {
     this.buffer = Buffer.concat([this.buffer, data]);
 
-    if (!endsWithCompleteMessage(data)) {
-      return [];
-    }
+    const { messageBuffers, remainder } = splitBufferBySep(this.buffer, SEP);
 
-    const messages = decodeMessages(this.buffer);
-    this.buffer = Buffer.alloc(0);
+    this.buffer = remainder || Buffer.alloc(0);
 
-    return messages;
+    return messageBuffers.map(buf => ServerMessage.decode(buf));
   }
 }
 
-function endsWithCompleteMessage(buf: Buffer) {
-  return SEP.compare(buf, buf.length - SEP.length) === 0;
-}
-
-function decodeMessages(buf: Buffer) {
-  return splitBufferBySep(buf, SEP).map(msgBuf => ServerMessage.decode(msgBuf));
-}
-
-function splitBufferBySep(buf: Buffer, sep: Buffer): Buffer[] {
+function splitBufferBySep(
+  buf: Buffer,
+  sep: Buffer
+): { messageBuffers: Buffer[]; remainder?: Buffer } {
   let idx = 0;
 
-  const msgBufs: Buffer[] = [];
+  const results = {
+    messageBuffers: [] as Buffer[],
+    remainder: undefined as Buffer | undefined
+  };
 
   while (idx < buf.length) {
     const nextIdx = buf.indexOf(sep, idx);
     if (nextIdx < 0) {
-      throw new VError(
-        { name: "MissingCrLf", info: { idx, buf, nextIdx } },
-        "Invalid data: CR/LF not found in buffer"
-      );
+      results.remainder = buf.slice(idx);
+      idx = buf.length;
+    } else {
       const msgBuf = buf.slice(idx, nextIdx);
-      msgBufs.push(msgBuf);
+      results.messageBuffers.push(msgBuf);
       idx = nextIdx + SEP.length;
     }
   }
-  return msgBufs;
+  return results;
 }

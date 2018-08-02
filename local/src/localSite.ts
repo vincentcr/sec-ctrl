@@ -1,6 +1,9 @@
 import { LocalConfig } from "./config";
 import { ClientMessage, ServerMessage } from "./envisalink/message";
-import { LocalSiteConnectionManager } from "./localSiteConnectionManager";
+import {
+  createLocalSiteConnectionManager,
+  LocalSiteConnectionManager
+} from "./localSiteConnectionManager";
 import { LocalSiteStateManager } from "./localSiteStateManager";
 
 export class LocalSite {
