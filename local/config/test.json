@@ -15,6 +15,6 @@
     "keepAliveIntervalMs": 30000
   },
   "logging": {
-    "level": "debug"
+    "level": "error"
   }
 }

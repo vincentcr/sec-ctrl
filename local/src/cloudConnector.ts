@@ -65,21 +65,18 @@ export class CloudConnector {
     return `sec-ctrl/${this.clientId}/${name}`;
   }
 
-  publishEvent(evt: SiteEvent) {
+  publishEvent(event: SiteEvent) {
     if (this.device == null) {
       throw new Error("BUG: device not connected. call start() first");
     }
-    this.logger.debug(evt, "publish to ", this._mkTopic("events"));
-    this.device.publish(
-      this._mkTopic("events"),
-      JSON.stringify(evt),
-      { qos: 1 },
-      err => {
-        if (err != null) {
-          this.logger.debug("failed to publish message: ", err);
-        }
+    const topic = this._mkTopic("events");
+    this.logger.debug({ event }, "publish to %s", topic);
+    const payload = JSON.stringify(event);
+    this.device.publish(topic, payload, { qos: 1 }, err => {
+      if (err != null) {
+        this.logger.debug("failed to publish message: ", err);
       }
-    );
+    });
   }
 
   _parseIncomingMessage(topic: string, data: Buffer) {

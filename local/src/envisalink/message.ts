@@ -40,8 +40,8 @@ export function makeMessageClass<TCode extends number>(
 
     toString() {
       return (
-        `${this.constructor.name} ` +
-        `{ code: ${codeDescriptor(this.code)}; data: ${this.data} }`
+        `${this.constructor.name}` +
+        `[code: '${codeDescriptor(this.code)}'; data: '${this.data}']`
       );
     }
 

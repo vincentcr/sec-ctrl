@@ -5,15 +5,12 @@ import "mocha";
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-import { makeMessageClass, ServerMessage } from "../src/envisalink/message";
-import {
-  LocalSiteStateManager,
-  MessageParser
-} from "../src/localSiteStateManager";
+import { makeMessageClass } from "../../src/envisalink/message";
+import { MessageEncoderDecoder } from "../../src/localSite/messageEncoderDecoder";
 
 class DummyMessage extends makeMessageClass(x => "X" + x.toString()) {}
 
-const messageParserTestCases = [
+const testCases = [
   {
     desc: "an empty buffer",
     buffers: [Buffer.alloc(0)],
@@ -75,31 +72,25 @@ const messageParserTestCases = [
   }
 ];
 
-describe("The MessageParser class", () => {
-  describe("The consume method", () => {
-    for (const { buffers, messages, desc } of messageParserTestCases) {
-      it(`"returns complete messages for ${desc}`, () => {
-        const parser = new MessageParser();
+describe("The MessageEncoderDecoder class", () => {
+  describe("The decode method", () => {
+    for (const { buffers, messages, desc } of testCases) {
+      it(`returns complete messages for ${desc}`, () => {
+        const encoderDecoder = new MessageEncoderDecoder();
         for (const [i, buf] of buffers.entries()) {
-          const actual = parser.consume(buf);
+          const actual = encoderDecoder.decode(buf);
           const expected = messages[i];
           expect(actual).to.deep.equal(expected);
         }
       });
     }
   });
-});
 
-function describeBuffers(buffers: Buffer[]) {
-  return buffers
-    .map(
-      b =>
-        "'" +
-        b
-          .toString()
-          .replace(/\r/g, "\\r")
-          .replace(/\n/g, "\\n") +
-        "'"
-    )
-    .join(" + ");
-}
+  it("The encode method should return the encoded buffer followed by CR\\LF ", () => {
+    const encoderDecoder = new MessageEncoderDecoder();
+    const msg = new DummyMessage(12, Buffer.from("hello"));
+    const actual = encoderDecoder.encode(msg);
+    const expected = Buffer.from("012helloa7\r\n");
+    expect(actual).to.deep.equal(expected);
+  });
+});

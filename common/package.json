@@ -13,12 +13,14 @@
   "license": "ISC",
   "devDependencies": {
     "@types/lodash": "^4.14.109",
+    "@types/nconf": "0.0.37",
     "@types/node": "^10.1.2",
     "tslint": "^5.10.0",
     "tslint-config-prettier": "^1.13.0",
     "typescript": "^2.8.3"
   },
   "dependencies": {
-    "lodash": "^4.17.10"
+    "lodash": "^4.17.10",
+    "nconf": "^0.10.0"
   }
 }

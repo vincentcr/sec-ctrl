@@ -25,7 +25,7 @@ export enum ServerCode {
   Ack = 500,
   CmdErr = 501,
   SysErr = 502,
-  LoginRes = 505,
+  LoginResponse = 505,
   KeypadLedState = 510,
   KeypadLedFlashState = 511,
   SystemTime = 550,
