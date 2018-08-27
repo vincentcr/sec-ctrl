@@ -2,25 +2,19 @@ import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import "mocha";
 
-import { SiteModel } from "../../src/models/SiteModel";
-import { SiteZoneModel } from "../../src/models/SiteZoneModel";
-
 chai.use(chaiAsPromised);
 const { expect } = chai;
 import { EventType, ZoneChangeEvent } from "../../../common/siteEvent";
 
 import { ZoneStatus } from "../../../common/zone";
+import { Models } from "../../src/models";
 import TestUtils from "../_testUtils";
 
-let models: { Sites: SiteModel; SiteZones: SiteZoneModel };
+let models: Models;
 
 describe("the SiteZone model", () => {
   before(async () => {
-    const knex = TestUtils.getConnection();
-    models = {
-      Sites: new SiteModel(knex),
-      SiteZones: new SiteZoneModel(knex)
-    };
+    models = await TestUtils.createModels();
   });
 
   describe("upsertFromEvent", () => {

@@ -4,8 +4,7 @@ import * as bodyParser from "koa-bodyparser";
 import * as _ from "lodash";
 import { VError } from "verror";
 
-import logger from "../logger";
-import Services from "../services";
+import { Services } from "../services";
 import { setupMiddlewares } from "./middlewares";
 import { setupRoutes } from "./routes";
 
@@ -14,29 +13,35 @@ export default async function createApp(services: Services): Promise<Koa> {
   const middlewares = await setupMiddlewares(services);
   app.use(cors());
   app.use(bodyParser());
-  app.use(requestLogger);
+  app.use(createRequestLogger(services));
   app.use(errorMiddleware);
   app.use(middlewares.authenticate);
-  app.on("error", errorHandler);
+  app.on("error", createErrorHandler(services));
 
   setupRoutes({ services, app, middlewares });
 
   return app;
 }
 
-async function requestLogger(ctx: Koa.Context, next: () => Promise<any>) {
-  await next();
-  const date = new Date();
-  const userId = ctx.state.user && ctx.state.user.id;
-  const { req, res } = ctx;
-  logger.info(
-    { req, res, userId, date },
-    "%s %s HTTP/%s => %s",
-    req.method,
-    req.url,
-    req.httpVersion,
-    res.statusCode
-  );
+function createRequestLogger(services: Services) {
+  const { logger } = services;
+  return async function requestLogger(
+    ctx: Koa.Context,
+    next: () => Promise<any>
+  ) {
+    await next();
+    const date = new Date();
+    const userId = ctx.state.user && ctx.state.user.id;
+    const { req, res } = ctx;
+    logger.info(
+      { req, res, userId, date },
+      "%s %s HTTP/%s => %s",
+      req.method,
+      req.url,
+      req.httpVersion,
+      res.statusCode
+    );
+  };
 }
 
 async function errorMiddleware(ctx: Koa.Context, next: () => Promise<any>) {
@@ -63,15 +68,18 @@ async function errorMiddleware(ctx: Koa.Context, next: () => Promise<any>) {
   }
 }
 
-function errorHandler(err: Error, ctx: Koa.Context) {
-  const userId = ctx.state.user != null ? ctx.state.user.id : undefined;
+function createErrorHandler(services: Services) {
+  const { logger } = services;
+  return function errorHandler(err: Error, ctx: Koa.Context) {
+    const userId = ctx.state.user != null ? ctx.state.user.id : undefined;
 
-  const level = ctx.state.isPublicErr ? "info" : "error";
+    const level = ctx.state.isPublicErr ? "info" : "error";
 
-  const errInfo = VError.info(err);
+    const errInfo = VError.info(err);
 
-  logger[level](
-    { req: ctx.request, err, errInfo, userId, resp: ctx.response },
-    "request failed"
-  );
+    logger[level](
+      { req: ctx.request, err, errInfo, userId, resp: ctx.response },
+      "request failed"
+    );
+  };
 }

@@ -3,29 +3,29 @@ import * as Knex from "knex";
 import * as uuid from "uuid";
 
 import { User } from "../../../common/user";
-import config from "../config";
 import {
   InvalidCredentialsError,
   UserAlreadyExistsError,
   UsernameNotFoundError
 } from "../errors";
-import { BaseModel } from "./BaseModel";
+import { BaseModel, ModelInitParams } from "./BaseModel";
 
 export type UserRecord = User & {
   readonly hashedPassword: string;
   readonly isActive: boolean;
 };
 
-const { bcryptRounds } = config.get("security");
-
 export class UserModel extends BaseModel<UserRecord> {
-  constructor(knex: Knex) {
-    super(knex, "users");
+  private readonly bcryptRounds: number;
+
+  constructor(params: ModelInitParams) {
+    super(params, "users");
+    this.bcryptRounds = this.config.get("security").bcryptRounds;
   }
 
   async create(params: { username: string; password: string }): Promise<User> {
     const { username, password } = params;
-    const hashedPassword = await bcrypt.hash(password, bcryptRounds);
+    const hashedPassword = await bcrypt.hash(password, this.bcryptRounds);
 
     const userRecord: UserRecord = {
       id: uuid.v4(),
@@ -111,32 +111,4 @@ export class UserModel extends BaseModel<UserRecord> {
     }
     return UserModel.toUser(recs[0]);
   }
-
-  // async addClaimedThing(params: {
-  //   username: string;
-  //   thingId: string;
-  //   name: string;
-  // }) {
-  //   const { username, thingId, name } = params;
-
-  //   await this.queryBuilder().update()
-
-  //   await this.update({
-  //     Key: { username },
-  //     UpdateExpression:
-  //       "set #sites = list_append(if_not_exists(#sites, :emptyList), :site)",
-  //     ExpressionAttributeNames: {
-  //       "#sites": "sites"
-  //     },
-  //     ExpressionAttributeValues: {
-  //       ":site": [
-  //         {
-  //           thingId,
-  //           name
-  //         }
-  //       ],
-  //       ":emptyList": []
-  //     }
-  //   });
-  // }
 }

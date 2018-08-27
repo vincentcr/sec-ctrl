@@ -6,16 +6,15 @@ import {
   PartitionChangeEvent,
   PartitionChangeType
 } from "../../../common/siteEvent";
-import logger from "../logger";
-import { BaseModel } from "./BaseModel";
+import { BaseModel, ModelInitParams } from "./BaseModel";
 
 export type SitePartitionRecord = Partition & {
   siteId: string;
 };
 
 export class SitePartitionModel extends BaseModel<SitePartitionRecord> {
-  constructor(knex: Knex) {
-    super(knex, "site_partitions");
+  constructor(params: ModelInitParams) {
+    super(params, "site_partitions");
   }
 
   upsert(
@@ -38,7 +37,7 @@ export class SitePartitionModel extends BaseModel<SitePartitionRecord> {
 
     const { partitionId } = event;
 
-    logger.debug({ siteId, event }, "updatePartitionFromEvent");
+    this.logger.debug({ siteId, event }, "updatePartitionFromEvent");
 
     const partition: Partial<SitePartitionRecord> = { siteId, id: partitionId };
 

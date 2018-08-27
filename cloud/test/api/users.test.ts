@@ -11,9 +11,8 @@ const { expect } = chai;
 
 import { User } from "../../../common/user";
 import createApp from "../../src/api/app";
-import config from "../../src/config";
 import { AccessToken } from "../../src/models/AccessTokenModel";
-import Services from "../../src/services";
+import { Services } from "../../src/services";
 
 const expectNoUserAdded = TestUtils.expectNoRecordAdded.bind(
   TestUtils,
@@ -26,7 +25,9 @@ describe("the /users API", () => {
   let services: Services;
 
   before(async () => {
-    services = await Services.create(TestUtils.mkMockIotPublisher().publish);
+    const config = TestUtils.getConfig();
+    const mockIotPublisher = TestUtils.mkMockIotPublisher();
+    services = await TestUtils.createServices(mockIotPublisher.publish);
     const app = await createApp(services);
     server = app.listen(config.get("http").port);
     agent = request(server);

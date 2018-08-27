@@ -1,8 +1,11 @@
 {
   "db": {
-    "host": "localhost",
+    "host": "sec-ctrl.cqymrz2s6hlj.us-east-1.rds.amazonaws.com",
     "port": 5432,
+    "admin_user": "dbadmin",
+    "admin_database": "dbadmin",
     "database": "sec_ctrl_prod",
     "user": "sec_ctrl_prod"
-  }
+  },
+  "ssmRoot": "/sec_ctrl/prod"
 }

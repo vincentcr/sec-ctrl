@@ -2,11 +2,7 @@ import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import "mocha";
 
-import { SiteModel } from "../../src/models/SiteModel";
-import {
-  SitePartitionModel,
-  SitePartitionRecord
-} from "../../src/models/SitePartitionModel";
+import { SitePartitionRecord } from "../../src/models/SitePartitionModel";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -18,17 +14,14 @@ import {
 } from "../../../common/siteEvent";
 
 import { PartitionStatus } from "../../../common/partition";
+import { Models } from "../../src/models";
 import TestUtils from "../_testUtils";
 
-let models: { Sites: SiteModel; SitePartitions: SitePartitionModel };
+let models: Models;
 
 describe("the SitePartition model", () => {
   before(async () => {
-    const knex = TestUtils.getConnection();
-    models = {
-      Sites: new SiteModel(knex),
-      SitePartitions: new SitePartitionModel(knex)
-    };
+    models = await TestUtils.createModels();
   });
 
   describe("upsertFromEvent", () => {

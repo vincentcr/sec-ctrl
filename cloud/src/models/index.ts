@@ -1,5 +1,6 @@
 import * as Knex from "knex";
 import { AccessTokenModel } from "./AccessTokenModel";
+import { ModelInitParams } from "./BaseModel";
 import { mapKey, mapObjectKeys } from "./keyMapper";
 import { SiteEventModel } from "./SiteEventModel";
 import { SiteModel } from "./SiteModel";
@@ -10,28 +11,25 @@ import { UserModel } from "./UserModel";
 type TransactionWorker = (tx: Knex.Transaction) => Promise<void>;
 
 export interface Models {
-  readonly Users: UserModel;
-  readonly AccessTokens: AccessTokenModel;
-  readonly Sites: SiteModel;
-  readonly SiteEvents: SiteEventModel;
-  readonly SitePartitions: SitePartitionModel;
-  readonly SiteZones: SiteZoneModel;
+  Users: UserModel;
+  AccessTokens: AccessTokenModel;
+  Sites: SiteModel;
+  SiteEvents: SiteEventModel;
+  SitePartitions: SitePartitionModel;
+  SiteZones: SiteZoneModel;
   withTransaction(work: TransactionWorker): Promise<void>;
   destroy(): Promise<void>;
 }
 
-export async function initModels(
-  config: Knex.ConnectionConfig
-): Promise<Models> {
-  const knex = connect(config);
-
+export async function initModels(params: ModelInitParams): Promise<Models> {
+  const { knex } = params;
   return {
-    Users: new UserModel(knex),
-    AccessTokens: new AccessTokenModel(knex),
-    Sites: new SiteModel(knex),
-    SiteEvents: new SiteEventModel(knex),
-    SitePartitions: new SitePartitionModel(knex),
-    SiteZones: new SiteZoneModel(knex),
+    Users: new UserModel(params),
+    AccessTokens: new AccessTokenModel(params),
+    Sites: new SiteModel(params),
+    SiteEvents: new SiteEventModel(params),
+    SitePartitions: new SitePartitionModel(params),
+    SiteZones: new SiteZoneModel(params),
 
     async withTransaction(work: TransactionWorker) {
       return knex.transaction(work);

@@ -4,26 +4,21 @@ import * as Knex from "knex";
 import * as _ from "lodash";
 import "mocha";
 
-import {
-  SiteEventModel,
-  SiteEventRecord
-} from "../../src/models/SiteEventModel";
+import { SiteEventRecord } from "../../src/models/SiteEventModel";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 import { EventType, SiteEvent } from "../../../common/siteEvent";
 import { ZoneStatus } from "../../../common/zone";
 
+import { Models } from "../../src/models";
 import TestUtils from "../_testUtils";
 
-let models: { SiteEvents: SiteEventModel };
+let models: Models;
 
 describe("the SiteEvent model", () => {
   before(async () => {
-    const knex = TestUtils.getConnection();
-    models = {
-      SiteEvents: new SiteEventModel(knex)
-    };
+    models = await TestUtils.createModels();
   });
 
   it("the create method inserts new events in the database", async () => {

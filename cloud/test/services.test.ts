@@ -20,7 +20,7 @@ import {
   userCommandfromJSON
 } from "../../common/userCommand";
 import { ZoneStatus } from "../../common/zone";
-import Services from "../src/services";
+import { Services, ServicesImpl } from "../src/services";
 
 let services: Services;
 let mockIotPublisher: MockIotPublisher;
@@ -28,7 +28,7 @@ let mockIotPublisher: MockIotPublisher;
 describe("the Services class", () => {
   before(async () => {
     mockIotPublisher = TestUtils.mkMockIotPublisher();
-    services = await Services.create(mockIotPublisher.publish);
+    services = await TestUtils.createServices(mockIotPublisher.publish);
   });
 
   afterEach(() => {
@@ -136,7 +136,7 @@ describe("the Services class", () => {
 
       const dateBefore = new Date();
 
-      await services.sendCommand({ siteId, cmd });
+      await services.sendCommandToSite({ siteId, cmd });
 
       expect(mockIotPublisher.requests.length).to.equal(1);
 
@@ -167,7 +167,7 @@ describe("the Services class", () => {
 
       const dateBefore = new Date();
 
-      await services.sendCommand({ siteId, cmd, ttlSeconds: 1000 });
+      await services.sendCommandToSite({ siteId, cmd, ttlSeconds: 1000 });
 
       const [{ payload }] = mockIotPublisher.requests;
 

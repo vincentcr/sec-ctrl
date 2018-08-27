@@ -1,14 +1,12 @@
-import * as bunyan from "bunyan";
-import config from "./config";
+import * as Logger from "bunyan";
+import { Config } from "./config";
 
-const logger = bunyan.createLogger({
-  name: "cloud",
-  level: config.get("logging").level,
-  serializers: bunyan.stdSerializers
-});
-export default logger;
+export { Logger };
 
-export function die(err: Error, ...args: any[]) {
-  logger.fatal(err, ...args);
-  process.exit(1);
+export function createLogger(config: Config) {
+  return Logger.createLogger({
+    name: "cloud",
+    level: config.get("logging").level,
+    serializers: Logger.stdSerializers
+  });
 }

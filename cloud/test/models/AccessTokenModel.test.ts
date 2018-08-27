@@ -2,22 +2,17 @@ import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import "mocha";
 
-import { AccessTokenModel } from "../../src/models/AccessTokenModel";
-import { UserModel } from "../../src/models/UserModel";
+import { Models } from "../../src/models";
 
 import TestUtils from "../_testUtils";
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-let models: { Users: UserModel; AccessTokens: AccessTokenModel };
+let models: Models;
 
 describe("the AccessToken model", () => {
   before(async () => {
-    const knex = TestUtils.getConnection();
-    models = {
-      Users: new UserModel(knex),
-      AccessTokens: new AccessTokenModel(knex)
-    };
+    models = await TestUtils.createModels();
   });
 
   describe("the create method", () => {

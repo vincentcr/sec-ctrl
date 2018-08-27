@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -euo pipefail
+
+KMS_KEY_ID=arn:aws:kms:us-east-1:899204185982:key/636bc0ac-52bb-46fd-8b54-365ac2074bce
+
+root=/sec_ctrl
+name="$1"
+read -e -s -p  "enter value for $name: " value
+
+echo value="|$value|"
+
+aws --profile $AWS_PROFILE \
+  ssm put-parameter \
+  --type SecureString \
+  --key-id  $KMS_KEY_ID \
+  --overwrite \
+  --name "$root/$name" \
+  --value "$value"

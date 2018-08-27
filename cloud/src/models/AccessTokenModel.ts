@@ -2,7 +2,7 @@ import * as crypto from "crypto";
 import * as Knex from "knex";
 import { promisify } from "util";
 
-import { BaseModel } from "./BaseModel";
+import { BaseModel, ModelInitParams } from "./BaseModel";
 
 const randomBytes = promisify(crypto.randomBytes);
 
@@ -12,8 +12,8 @@ export interface AccessToken {
 }
 
 export class AccessTokenModel extends BaseModel<AccessToken> {
-  constructor(knex: Knex) {
-    super(knex, "access_tokens");
+  constructor(params: ModelInitParams) {
+    super(params, "access_tokens");
   }
 
   async create(userId: string): Promise<AccessToken> {

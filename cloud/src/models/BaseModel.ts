@@ -1,25 +1,34 @@
 import * as Knex from "knex";
 
+import { Config } from "../config";
+import { Logger } from "../logger";
 import { KeyMapper, mapKeys, mapObjectKeys } from "./keyMapper";
 
 interface BaseItem {
   [k: string]: any;
 }
 
+export type ModelInitParams = { knex: Knex; config: Config; logger: Logger };
+
 export class BaseModel<TItem extends BaseItem> {
   protected readonly knex: Knex;
+  protected readonly logger: Logger;
+  protected readonly config: Config;
   protected readonly tableName: string;
   protected readonly schemaName: string;
   protected readonly keyMapper?: KeyMapper;
   readonly fqTableName: string;
 
   constructor(
-    knex: Knex,
+    params: ModelInitParams,
     tableName: string,
     keyMapper?: KeyMapper,
     schemaName = "public"
   ) {
-    this.knex = knex;
+    this.knex = params.knex;
+    this.logger = params.logger;
+    this.config = params.config;
+
     this.tableName = tableName;
     this.schemaName = schemaName;
     this.keyMapper = keyMapper;

@@ -1,7 +1,7 @@
 import * as Knex from "knex";
 
 import { SiteEvent } from "../../../common/siteEvent";
-import { BaseModel } from "./BaseModel";
+import { BaseModel, ModelInitParams } from "./BaseModel";
 
 export interface SiteEventRecord {
   readonly event: SiteEvent;
@@ -11,8 +11,8 @@ export interface SiteEventRecord {
 }
 
 export class SiteEventModel extends BaseModel<SiteEventRecord> {
-  constructor(knex: Knex) {
-    super(knex, "site_events");
+  constructor(params: ModelInitParams) {
+    super(params, "site_events");
   }
 
   async create(params: {

@@ -4,36 +4,22 @@ import * as Knex from "knex";
 import * as _ from "lodash";
 import "mocha";
 
-import { EventType, SiteEvent } from "../../../common/siteEvent";
-import { SiteModel, SiteRecord } from "../../src/models/SiteModel";
-import { UserModel } from "../../src/models/UserModel";
-
 import { PartitionStatus } from "../../../common/partition";
 import { Site } from "../../../common/site";
+import { EventType, SiteEvent } from "../../../common/siteEvent";
 import { ZoneStatus } from "../../../common/zone";
-import { SitePartitionModel } from "../../src/models/SitePartitionModel";
-import { SiteZoneModel, SiteZoneRecord } from "../../src/models/SiteZoneModel";
-import TestUtils from "../_testUtils";
+import { Models } from "../../src/models";
+import { SiteRecord } from "../../src/models/SiteModel";
 
+import TestUtils from "../_testUtils";
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-let models: {
-  Sites: SiteModel;
-  Users: UserModel;
-  SitePartitions: SitePartitionModel;
-  SiteZones: SiteZoneModel;
-};
+let models: Models;
 
 describe("the Site model", () => {
   before(async () => {
-    const knex = TestUtils.getConnection();
-    models = {
-      Sites: new SiteModel(knex),
-      Users: new UserModel(knex),
-      SitePartitions: new SitePartitionModel(knex),
-      SiteZones: new SiteZoneModel(knex)
-    };
+    models = await TestUtils.createModels();
   });
 
   describe("claim", () => {

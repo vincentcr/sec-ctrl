@@ -9,7 +9,7 @@ import {
   SiteDoesNotExistError,
   UserNotAuthorizedError
 } from "../errors";
-import Services from "../services";
+import { Services } from "../services";
 
 export interface Middlewares {
   validators: ValidatorBuilder;

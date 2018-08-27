@@ -1,8 +1,7 @@
 import { Context } from "aws-lambda";
 
 import { SiteEvent } from "../../../common/siteEvent";
-import logger from "../logger";
-import Services from "../services";
+import { Services } from "../services";
 
 export interface SecCtrlIoTPayload {
   event: SiteEvent;
@@ -10,10 +9,12 @@ export interface SecCtrlIoTPayload {
   thingId: string;
 }
 
-export async function handler(payload: SecCtrlIoTPayload, context: Context) {
-  logger.debug(payload, "IoT event");
-
-  const services = await Services.getInstance();
+export async function handler(
+  services: Services,
+  payload: SecCtrlIoTPayload,
+  context: Context
+) {
+  services.logger.debug(payload, "IoT event");
 
   try {
     await services.saveEvent({
@@ -22,7 +23,7 @@ export async function handler(payload: SecCtrlIoTPayload, context: Context) {
       receivedAt: new Date(payload.receivedAt)
     });
   } catch (err) {
-    logger.error({ payload, err }, "failed to process event");
+    services.logger.error({ payload, err }, "failed to process event");
     context.fail(err);
   }
 }

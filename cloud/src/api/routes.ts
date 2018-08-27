@@ -2,7 +2,7 @@ import * as Koa from "koa";
 import * as Router from "koa-router";
 
 import { User } from "../../../common/user";
-import Services from "../services";
+import { Services } from "../services";
 import { Middlewares } from "./middlewares";
 
 interface RouteBuilderParam {
@@ -84,7 +84,7 @@ function setupSitesRoutes({ services, app, middlewares }: RouteBuilderParam) {
     async ctx => {
       const cmd = ctx.request.body;
       const siteId = ctx.state.site.id;
-      await services.sendCommand({ cmd, siteId });
+      await services.sendCommandToSite({ cmd, siteId });
       ctx.response.status = 202;
     }
   );

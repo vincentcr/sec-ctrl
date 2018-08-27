@@ -3,14 +3,13 @@ import * as Knex from "knex";
 import { Site } from "../../../common/site";
 import { EventType, SiteEvent } from "../../../common/siteEvent";
 import { SiteAlreadyClaimedError } from "../errors";
-import logger from "../logger";
-import { BaseModel } from "./BaseModel";
+import { BaseModel, ModelInitParams } from "./BaseModel";
 
 export type SiteRecord = Omit<Omit<Site, "partitions">, "zones">;
 
 export class SiteModel extends BaseModel<SiteRecord> {
-  constructor(knex: Knex) {
-    super(knex, "sites");
+  constructor(params: ModelInitParams) {
+    super(params, "sites");
   }
 
   upsert(
@@ -35,7 +34,7 @@ export class SiteModel extends BaseModel<SiteRecord> {
 
     const data: Partial<SiteRecord> = { id, systemTroubleStatus };
 
-    logger.debug({ data, event, id }, "SiteModel.upsertFromEvent");
+    this.logger.debug({ data, event, id }, "SiteModel.upsertFromEvent");
 
     return this.upsert(data, transaction);
   }

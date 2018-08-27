@@ -7,37 +7,57 @@ import {
   UserCommand,
   UserCommandWithExpiration
 } from "../../common/userCommand";
-import config from "./config";
-import { initModels, Models } from "./models";
+import { Config, loadConfig } from "./config";
+import { createLogger, Logger } from "./logger";
+import { connect, initModels, Models } from "./models";
 
 export type IotPublisher = (
   req: AWS.IotData.Types.PublishRequest
 ) => Promise<void>;
 
-export default class Services {
+export interface Services {
+  readonly logger: Logger;
+  readonly config: Config;
   readonly models: Models;
+
+  sendCommandToSite(params: {
+    siteId: string;
+    cmd: UserCommand;
+    ttlSeconds?: number;
+  }): Promise<void>;
+
+  saveEvent(params: {
+    siteId: string;
+    event: SiteEvent;
+    receivedAt: Date;
+  }): Promise<void>;
+
+  destroy(): Promise<void>;
+}
+
+type ServiceCreateParams = {
+  config: Config;
+  logger: Logger;
+  models: Models;
+  iotPublisher: IotPublisher;
+};
+
+export class ServicesImpl {
+  readonly logger: Logger;
+  readonly config: Config;
+  readonly models: Models;
+
   private readonly iotPublisher: IotPublisher;
 
-  static instance: Services;
-  static async getInstance() {
-    if (this.instance == null) {
-      const awsPublisher = await mkAwsIotPublisher();
-      this.instance = await this.create(awsPublisher);
-    }
-    return this.instance;
-  }
-
-  static async create(iotPublisher: IotPublisher) {
-    const models = await initModels(config.get("db"));
-    return new Services(models, iotPublisher);
-  }
-
-  private constructor(models: Models, iotPublisher: IotPublisher) {
+  constructor(params: ServiceCreateParams) {
+    const { config, logger, models, iotPublisher } = params;
+    this.config = config;
+    this.logger = logger;
     this.models = models;
     this.iotPublisher = iotPublisher;
   }
 
-  async sendCommand(params: {
+  async sendCommandToSite(params: {
     siteId: string;
     cmd: UserCommand;
     ttlSeconds?: number;
@@ -128,4 +148,30 @@ async function initIotDataPlane() {
     endpoint: iotEndpointResponse.endpointAddress
   });
   return iotData;
+}
+
+let instance: Services;
+export async function getServicesInstance(): Promise<Services> {
+  if (instance == null) {
+    instance = await createServices();
+  }
+  return instance;
+}
+
+async function createServices(): Promise<Services> {
+  const [config, iotPublisher] = await Promise.all([
+    loadConfig(),
+    mkAwsIotPublisher()
+  ]);
+
+  const logger = createLogger(config);
+  const knex = connect(config.get("db"));
+
+  const models = await initModels({ knex, config, logger });
+  return new ServicesImpl({
+    config,
+    logger,
+    models,
+    iotPublisher
+  });
 }

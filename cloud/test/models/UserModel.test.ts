@@ -11,24 +11,18 @@ import {
   UserAlreadyExistsError,
   UsernameNotFoundError
 } from "../../src/errors";
-import {
-  AccessToken,
-  AccessTokenModel
-} from "../../src/models/AccessTokenModel";
+import { Models } from "../../src/models";
+import { AccessToken } from "../../src/models/AccessTokenModel";
 import TestUtils from "../_testUtils";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-let models: { Users: UserModel; AccessTokens: AccessTokenModel };
+let models: Models;
 
 describe("the User model", () => {
   before(async () => {
-    const knex = TestUtils.getConnection();
-    models = {
-      Users: new UserModel(knex),
-      AccessTokens: new AccessTokenModel(knex)
-    };
+    models = await TestUtils.createModels();
   });
 
   describe("the create method", () => {

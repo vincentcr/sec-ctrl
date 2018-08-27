@@ -2,16 +2,15 @@ import * as Knex from "knex";
 
 import { ZoneChangeEvent } from "../../../common/siteEvent";
 import { Zone } from "../../../common/zone";
-import logger from "../logger";
-import { BaseModel } from "./BaseModel";
+import { BaseModel, ModelInitParams } from "./BaseModel";
 
 export type SiteZoneRecord = Zone & {
   siteId: string;
 };
 
 export class SiteZoneModel extends BaseModel<SiteZoneRecord> {
-  constructor(knex: Knex) {
-    super(knex, "site_zones");
+  constructor(params: ModelInitParams) {
+    super(params, "site_zones");
   }
 
   upsert(
@@ -34,7 +33,7 @@ export class SiteZoneModel extends BaseModel<SiteZoneRecord> {
     const { zoneId, partitionId, status } = event;
     const zone: SiteZoneRecord = { siteId, id: zoneId, partitionId, status };
 
-    logger.debug(zone, "SiteZoneModel.upsertFromEvent");
+    this.logger.debug(zone, "SiteZoneModel.upsertFromEvent");
 
     return this.upsert(zone, transaction);
   }

@@ -11,14 +11,14 @@ import "mocha";
 import * as uuid from "uuid/v4";
 
 import createApp from "../src/api/app";
-import config from "../src/config";
-import { connect, Models } from "../src/models";
+import { Config, loadConfig } from "../src/config";
+import { createLogger, Logger } from "../src/logger";
+import { connect, initModels, Models } from "../src/models";
 import { BaseModel } from "../src/models/BaseModel";
-import Services, { IotPublisher } from "../src/services";
+import { IotPublisher, Services, ServicesImpl } from "../src/services";
 
 const { expect } = chai;
 const readFile = util.promisify(fs.readFile);
-const exec = util.promisify(childProcess.exec);
 
 export interface MockIotPublisher {
   requests: AWS.IotData.Types.PublishRequest[];
@@ -28,8 +28,15 @@ export interface MockIotPublisher {
 
 // tslint:disable-next-line:variable-name
 let _knex: Knex;
+// tslint:disable-next-line:variable-name
+let _config: Config;
+// tslint:disable-next-line:variable-name
+let _logger: Logger;
 
 before(async () => {
+  await initConfig();
+  await initConnection();
+  await initLogger();
   await TestUtils.resetDB();
 });
 
@@ -43,11 +50,16 @@ export const TestUtils = {
     return uuid();
   },
 
-  getConnection() {
-    if (_knex == null) {
-      _knex = connect(config.get("db"));
-    }
+  getConfig(): Config {
+    return _config;
+  },
+
+  getConnection(): Knex {
     return _knex;
+  },
+
+  getLogger() {
+    return _logger;
   },
 
   async expectNoRecordAdded(
@@ -69,6 +81,15 @@ export const TestUtils = {
     await runDDLs(knex);
   },
 
+  async createModels(): Promise<Models> {
+    const config = this.getConfig();
+    const knex = this.getConnection();
+    const logger = this.getLogger();
+    const models = await initModels({ knex, config, logger });
+
+    return models;
+  },
+
   async clearModels(models: { [k: string]: BaseModel<any> }) {
     console.time("clearModels");
     const knex = this.getConnection();
@@ -81,7 +102,15 @@ export const TestUtils = {
   },
 
   async createServices(iotPublisher: IotPublisher): Promise<Services> {
-    return Services.create(iotPublisher);
+    const [knex, config] = await Promise.all([
+      this.getConnection(),
+      this.getConfig()
+    ]);
+
+    const logger = createLogger(config);
+    const models = await initModels({ config, knex, logger });
+
+    return new ServicesImpl({ models, logger, config, iotPublisher });
   },
 
   mkMockIotPublisher(): MockIotPublisher {
@@ -116,4 +145,16 @@ async function runDDLs(knex: Knex) {
     await knex.raw(sql);
   }
   console.timeEnd("runDDLs");
+}
+
+async function initConfig() {
+  _config = await loadConfig();
+}
+
+async function initConnection() {
+  _knex = connect(_config.get("db"));
+}
+
+async function initLogger() {
+  _logger = createLogger(_config);
 }
