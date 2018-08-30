@@ -7,9 +7,7 @@ version: 2
 jobs:
   build:
     docker:
-      # specify the version you desire here
       - image: circleci/node:8.10
-
     working_directory: ~/repo
 
     steps:
@@ -43,13 +41,59 @@ jobs:
       - run:
           name: Transpile TypeScript files
           command: cd cloud && ./node_modules/.bin/tsc
-      - run:
-          name: Build archive
-          command: cd cloud && mkdir out && zip -q -r out/lambda.zip .
       - persist_to_workspace:
-          root: cloud/out
+          root: ~/repo
           paths:
-            - lambda.zip
+            - .
+
+  test_db_image:
+    docker:
+      - image: circleci/node:8.10
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: build test postgresql db
+          command: cd cloud/db && docker build -t test-cloud-db --build-arg DB_PASSWORD=sec_ctrl_test123 .
+
+  test:
+    docker:
+      - image: circleci/node:8.10
+      - image: test-cloud-db
+        environment:
+          DB_NAME: sec_ctrl_test
+          DB_USER: sec_ctrl_test
+    working_directory: ~/repo
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run:
+          name: Run tests
+          command: cd cloud && npm test
+
+      # - run:
+      #     name: run test suite
+      #     command: docker-compose up test
+      # - run:
+      #     name: see what's out there
+      #     command: ls *
+      # - run:
+      #     name: start test postgres db
+      #     command: docker-compose up -d test-cloud-db
+      # - run:
+      #     name: wait for db
+      #     command: |
+      #       for i in `seq 1 10`;
+      #       do
+      #         nc -z localhost 2346 && echo Success && exit 0
+      #         echo -n .
+      #         sleep 1
+      #       done
+      #       echo Failed waiting for Postgress && exit 1
+      # - run:
+      #     name: Run tests
+      #     command: cd cloud && npm test
 
   deploy:
     docker:
@@ -57,20 +101,28 @@ jobs:
     working_directory: ~/repo
     steps:
       - attach_workspace:
-          at: /tmp/out
+          at: ~/repo
+      - run:
+          name: Build archive
+          command: cd cloud && mkdir out && zip -q -r out/lambda.zip .
       - run:
           name: Deploy to Lambda
           command: aws lambda update-function-code --function-name sec-ctrl --zip-file fileb:///tmp/out/lambda.zip
 
-
 workflows:
   version: 2
-  build-deploy:
+  build-test-deploy:
     jobs:
       - build
+      - test_db_image
+      - test:
+          requires:
+            - test_db_image
+            - build
       - deploy:
           requires:
             - build
+            - test
           filters:
             branches:
               only: master

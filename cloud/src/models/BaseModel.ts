@@ -2,7 +2,7 @@ import * as Knex from "knex";
 
 import { Config } from "../config";
 import { Logger } from "../logger";
-import { KeyMapper, mapKeys, mapObjectKeys } from "./keyMapper";
+import { KeyMapper, mapKeys, mapObjectKeys } from "./KeyMapper";
 
 interface BaseItem {
   [k: string]: any;

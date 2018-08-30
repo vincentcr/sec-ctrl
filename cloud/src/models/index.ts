@@ -1,7 +1,7 @@
 import * as Knex from "knex";
 import { AccessTokenModel } from "./AccessTokenModel";
 import { ModelInitParams } from "./BaseModel";
-import { mapKey, mapObjectKeys } from "./keyMapper";
+import { mapKey, mapObjectKeys } from "./KeyMapper";
 import { SiteEventModel } from "./SiteEventModel";
 import { SiteModel } from "./SiteModel";
 import { SitePartitionModel } from "./SitePartitionModel";

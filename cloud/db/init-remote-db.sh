@@ -13,7 +13,14 @@ else
   MD5_CMD='md5sum'
 fi
 
-SSM_CONFIG=$(aws --profile=$AWS_PROFILE ssm get-parameters-by-path --path $SSM_ROOT --recursive --max-results 10 --with-decryption)
+SSM_CONFIG=$( \
+  aws --profile=$AWS_PROFILE \
+  ssm get-parameters-by-path \
+    --path $SSM_ROOT \
+    --recursive \
+    --max-results 10 \
+    --with-decryption \
+  )
 
 function get_ssm_value {
   local name="$SSM_ROOT/db/$1"
@@ -25,7 +32,7 @@ function get_config_value {
   cat $PROD_CONFIG_FILE | jq -r $name
 }
 
-DB_ADMIN_PASSWORD=$(get_ssm_value ad min_password)
+DB_ADMIN_PASSWORD=$(get_ssm_value admin_password)
 DB_PASSWORD=$(get_ssm_value password)
 DB_ADMIN_USER=$(get_config_value admin_user)
 DB_ADMIN_DB_NAME=$(get_config_value admin_database)

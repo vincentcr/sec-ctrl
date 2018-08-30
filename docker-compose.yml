@@ -1,5 +1,14 @@
 version: "3.2"
 services:
+  test:
+    build:
+      context: .
+      dockerfile: cloud/test/Dockerfile
+    links:
+      - test-cloud-db
+    environment:
+      sec_ctrl__db__port: 5432
+      sec_ctrl__db__host: test-cloud-db
 
   test-cloud-db:
     build:
@@ -7,11 +16,10 @@ services:
       args:
         DB_PASSWORD: sec_ctrl_test123
     environment:
-        DB_NAME: sec_ctrl_test
-        DB_USER: sec_ctrl_test
+      DB_NAME: sec_ctrl_test
+      DB_USER: sec_ctrl_test
     ports:
       - "2346:5432"
-
 
   cloud-db:
     #image: sec-ctl-db
@@ -20,8 +28,8 @@ services:
       args:
         DB_NAME: sec_ctrl_dev
     environment:
-        DB_USER: sec_ctrl_dev
-        DB_PASSWORD: sec_ctrl_dev123
+      DB_USER: sec_ctrl_dev
+      DB_PASSWORD: sec_ctrl_dev123
     ports:
       - "5678:5432"
     volumes:
@@ -29,7 +37,6 @@ services:
 
   cloud-redis:
     image: redis:4.0
-
   # cloud:
   #   image: sec-ctl-cloud
   #   ports:
@@ -39,7 +46,6 @@ services:
   #     - cloud-redis:redis
   #   environment:
   #     - "SecCtl.Cloud.DBHost=db"
-
   # local:
   #   image: sec-ctl-local
   #   links:
@@ -55,10 +61,8 @@ services:
   #     - 9752:9752
   #   volumes:
   #     - "./local-config.json:/root/.config/sec-ctl/Local.json"
-
   # local-redis:
   #   image: redis:4.0
-
   # mock:
   #   image: sec-ctl-mock
   #   volumes:
@@ -68,4 +72,3 @@ services:
   #   ports:
   #     - 9751:9751
   #     - 4025:4025
-

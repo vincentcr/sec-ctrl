@@ -12,7 +12,7 @@
     "lint": "tslint --project .",
     "tscheck": "tsc --noEmit",
     "static-checks": "npm run lint && npm run tscheck",
-    "all-tests": "npm run static-checks && npm test"
+    "test-suite": "npm run static-checks && npm test"
   },
   "author": "Vincent Côté-Roy",
   "license": "ISC",

@@ -3,6 +3,7 @@
     "module": "CommonJS",
     "noImplicitAny": true,
     "preserveConstEnums": true,
+    "forceConsistentCasingInFileNames": true,
     "sourceMap": true,
     "strict": true,
     "outDir": "dist",

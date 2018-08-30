@@ -11,6 +11,6 @@ RUN  mkdir /pgsql-bootstrap
 RUN echo -n ${DB_PASSWORD}${DB_USER} | md5sum | cut -d' ' -f1 > ${SCRIPTS_DIR}/md5_passwd
 
 COPY init-db.sh /docker-entrypoint-initdb.d/
-COPY *.sql ${SCRIPTS_DIR}
+COPY *.sql ${SCRIPTS_DIR}/
 
 
