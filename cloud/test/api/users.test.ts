@@ -38,10 +38,7 @@ describe("the /users API", () => {
   });
 
   after(done => {
-    services
-      .destroy()
-      .then(() => server.close(done))
-      .catch(done);
+    server.close(done);
   });
 
   describe("the POST /users/signup endpoint", () => {
