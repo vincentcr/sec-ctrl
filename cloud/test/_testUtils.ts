@@ -64,7 +64,7 @@ export const TestUtils = {
 
   async expectNoRecordAdded(
     tableName: string,
-    work: Promise<any>
+    work: PromiseLike<any>
   ): Promise<void> {
     const conn = this.getConnection();
     const [{ count: countBefore }] = await conn.count("*").from(tableName);

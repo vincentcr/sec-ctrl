@@ -1,7 +1,7 @@
 import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import "mocha";
-import * as request from "supertest";
+import * as supertestFetch from "supertest-fetch";
 
 import { Server } from "http";
 
@@ -14,15 +14,19 @@ import createApp from "../../src/api/app";
 import { AccessToken } from "../../src/models/AccessTokenModel";
 import { Services } from "../../src/services";
 
-const expectNoUserAdded = TestUtils.expectNoRecordAdded.bind(
-  TestUtils,
-  "users"
-);
+const expectNoUserAdded = (work: PromiseLike<any>) =>
+  TestUtils.expectNoRecordAdded("users", work);
+
+type Agent = (
+  url: string | supertestFetch.Request,
+  init?: supertestFetch.RequestInit | undefined
+) => supertestFetch.Test;
 
 describe("the /users API", () => {
-  let agent: request.SuperTest<request.Test>;
+  let agent: Agent;
   let server: Server;
   let services: Services;
+  // let agent:
 
   before(async () => {
     const config = TestUtils.getConfig();
@@ -30,7 +34,7 @@ describe("the /users API", () => {
     services = await TestUtils.createServices(mockIotPublisher.publish);
     const app = await createApp(services);
     server = app.listen(config.get("http").port);
-    agent = request(server);
+    agent = supertestFetch.makeFetch(server);
   });
 
   after(done => {
@@ -43,55 +47,58 @@ describe("the /users API", () => {
   describe("the POST /users/signup endpoint", () => {
     it("rejects missing username", async () => {
       await expectNoUserAdded(
-        agent
-          .post("/users/signup")
-          .send({ password: "bar123" })
-          .expect(400)
+        agent("/users/signup", {
+          method: "POST",
+          body: JSON.stringify({ password: "bar123" })
+        }).expect(400)
       );
     });
 
     it("rejects an empty username", async () => {
       await expectNoUserAdded(
-        agent
-          .post("/users/signup")
-          .send({ username: "", password: "bar123" })
-          .expect(400)
+        agent("/users/signup", {
+          method: "POST",
+          body: JSON.stringify({ username: "", password: "bar123" })
+        }).expect(400)
       );
     });
 
     it("rejects a username too small", async () => {
       await expectNoUserAdded(
-        agent
-          .post("/users/signup")
-          .send({ username: "1", password: "bar123" })
-          .expect(400)
+        agent("/users/signup", {
+          method: "POST",
+          body: JSON.stringify({ username: "1", password: "bar123" })
+        }).expect(400)
       );
     });
 
     it("rejects missing password", async () => {
       await expectNoUserAdded(
-        agent
-          .post("/users/signup")
-          .send({ username: TestUtils.genUuid() })
-          .expect(400)
+        agent("/users/signup", {
+          method: "POST",
+          body: JSON.stringify({ username: TestUtils.genUuid() })
+        }).expect(400)
       );
     });
 
     it("rejects a password too small", async () => {
       await expectNoUserAdded(
-        agent
-          .post("/users/signup")
-          .send({ username: "abcdef", password: "bar12" })
-          .expect(400)
+        agent("/users/signup", {
+          method: "POST",
+          body: JSON.stringify({ username: "abcdef", password: "bar12" })
+        }).expect(400)
       );
     });
 
     it("creates a new user if the input is valid, and returns the user along with an access token", async () => {
       const username = TestUtils.genUuid();
-      const { body } = await agent
-        .post("/users/signup")
-        .send({ username, password: "bar123" })
-        .expect(200);
+      const resp = await agent("/users/signup", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ username, password: "bar123" })
+      }).expect(200);
+
+      const body = await resp.json();
 
       expect(body).to.be.an("object");
       expect(body).to.have.all.keys("token", "user");
@@ -137,10 +144,17 @@ describe("the /users API", () => {
     });
 
     it("rejects non-existent username", async () => {
-      const { body } = await agent
-        .post("/users/signin")
-        .send({ username: TestUtils.genUuid(), password: "bar123" })
-        .expect(422);
+      const resp = await agent("/users/signin", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          username: TestUtils.genUuid(),
+          password: "bar123"
+        })
+      }).expect(422);
+
+      const body = await resp.json();
+
       expect(body).to.be.an("object");
       expect(body).to.have.all.keys("message", "name");
       expect(body.message).to.be.a("string");
@@ -149,10 +163,14 @@ describe("the /users API", () => {
     });
 
     it("rejects invalid password", async () => {
-      const { body } = await agent
-        .post("/users/signin")
-        .send({ username: user.username, password: "bar123" })
-        .expect(401);
+      const resp = await agent("/users/signin", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ username: user.username, password: "bar123" })
+      }).expect(401);
+
+      const body = await resp.json();
+
       expect(body).to.be.an("object");
       expect(body).to.have.all.keys("message", "name");
       expect(body.message).to.be.a("string");
@@ -161,10 +179,13 @@ describe("the /users API", () => {
     });
 
     it("returns a valid token if username and password match", async () => {
-      const { body } = await agent
-        .post("/users/signin")
-        .send({ username: user.username, password })
-        .expect(200);
+      const resp = await agent("/users/signin", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ username: user.username, password })
+      }).expect(200);
+      const body = await resp.json();
+
       expect(body).to.be.an("object");
       expect(body).to.have.all.keys("token", "user");
 
@@ -201,7 +222,9 @@ describe("the /users API", () => {
     });
 
     it("return 401 if no authorization header", async () => {
-      const { body } = await agent.get("/users/me").expect(401);
+      const resp = await agent("/users/me").expect(401);
+
+      const body = await resp.json();
       expect(body).to.be.an("object");
       expect(body).to.have.all.keys("message", "name");
       expect(body.message).to.be.a("string");
@@ -210,10 +233,11 @@ describe("the /users API", () => {
     });
 
     it("return 401 if invalid authorization header", async () => {
-      const { body } = await agent
-        .get("/users/me")
-        .set("authorization", "boo")
-        .expect(401);
+      const resp = await agent("/users/me", {
+        headers: { authorization: "boo" }
+      }).expect(401);
+
+      const body = await resp.json();
       expect(body).to.be.an("object");
       expect(body).to.have.all.keys("message", "name");
       expect(body.message).to.be.a("string");
@@ -222,10 +246,11 @@ describe("the /users API", () => {
     });
 
     it("return 401 if invalid token", async () => {
-      const { body } = await agent
-        .get("/users/me")
-        .set("authorization", "Bearer foo")
-        .expect(401);
+      const resp = await agent("/users/me", {
+        headers: { authorization: "Bearer foo" }
+      }).expect(401);
+
+      const body = await resp.json();
       expect(body).to.be.an("object");
       expect(body).to.have.all.keys("message", "name");
       expect(body.message).to.be.a("string");
@@ -234,10 +259,11 @@ describe("the /users API", () => {
     });
 
     it("return the user if token is valid", async () => {
-      const { body } = await agent
-        .get("/users/me")
-        .set("authorization", `Bearer ${token.token}`)
-        .expect(200);
+      const resp = await agent("/users/me", {
+        headers: { authorization: `Bearer ${token.token}` }
+      }).expect(200);
+
+      const body = await resp.json();
       expect(body).to.be.an("object");
       expect(body).to.deep.equal(user);
     });
@@ -265,21 +291,21 @@ describe("the /users API", () => {
     });
 
     it("return 401 if no authorization header", async () => {
-      await agent.post("/users/me/signout").expect(401);
+      await agent("/users/me/signout", { method: "POST" }).expect(401);
     });
 
     it("signouts the user if token is valid", async () => {
-      const { text } = await agent
-        .post("/users/me/signout")
-        .set("authorization", `Bearer ${token.token}`)
-        .expect(204);
+      const resp = await agent("/users/me/signout", {
+        method: "POST",
+        headers: { authorization: `Bearer ${token.token}` }
+      }).expect(204);
+      const text = await resp.text();
       expect(text).to.equal("");
 
       // token no longer valid
-      await agent
-        .get("/users/me")
-        .set("authorization", `Bearer ${token.token}`)
-        .expect(401);
+      await agent("/users/me", {
+        headers: { authorization: `Bearer ${token.token}` }
+      }).expect(401);
     });
   });
 });
