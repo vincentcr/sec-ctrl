@@ -46,28 +46,19 @@ jobs:
           paths:
             - .
 
-  test_db_image:
-    docker:
-      - image: circleci/node:8.10
-    working_directory: ~/repo
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: build test postgresql db
-          command: cd cloud/db && docker build -t test-cloud-db --build-arg DB_PASSWORD=sec_ctrl_test123 .
-
   test:
     docker:
       - image: circleci/node:8.10
-      - image: test-cloud-db
-        environment:
-          DB_NAME: sec_ctrl_test
-          DB_USER: sec_ctrl_test
+      - image: postgres:10-alpine
     working_directory: ~/repo
+    environment:
+      sec_ctrl__db__port: 5432
     steps:
       - attach_workspace:
           at: ~/repo
+      - run:
+          name: Setup test db
+          command: cd cloud && npm run setup-test-db
       - run:
           name: Run tests
           command: cd cloud && npm test
@@ -114,10 +105,8 @@ workflows:
   build-test-deploy:
     jobs:
       - build
-      - test_db_image
       - test:
           requires:
-            - test_db_image
             - build
       - deploy:
           requires:

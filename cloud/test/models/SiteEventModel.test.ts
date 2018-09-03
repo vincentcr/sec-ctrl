@@ -21,31 +21,41 @@ describe("the SiteEvent model", () => {
     models = await TestUtils.createModels();
   });
 
-  it("the create method inserts new events in the database", async () => {
-    const { siteId, events, receivedAt } = mockEvents();
+  const siteId1 = TestUtils.genUuid();
+  const siteId2 = TestUtils.genUuid();
+  before(async () => {
+    await Promise.all(
+      [siteId1, siteId2].map(id => models.Sites.upsert({ id }))
+    );
+  });
 
-    await models.SiteEvents.create({ siteId, events, receivedAt });
+  it("the create method inserts new events in the database", async () => {
+    const { events, receivedAt } = mockEvents();
+
+    await models.SiteEvents.create({ siteId: siteId1, events, receivedAt });
 
     const eventsInDB: SiteEventRecord[] = await TestUtils.getConnection()
       .select()
       .from("site_events")
       .orderBy("id");
 
-    assertEventsInDB(eventsInDB, events, siteId, receivedAt);
+    assertEventsInDB(eventsInDB, events, siteId1, receivedAt);
   });
 
   describe("the getBySiteId", () => {
     it("returns the latest events", async () => {
-      const { siteId, events, receivedAt } = mockEvents();
+      const { events, receivedAt } = mockEvents();
 
-      await models.SiteEvents.create({ siteId, events, receivedAt });
+      await models.SiteEvents.create({ siteId: siteId2, events, receivedAt });
 
-      const eventsInDB = await models.SiteEvents.getBySiteId({ siteId });
+      const eventsInDB = await models.SiteEvents.getBySiteId({
+        siteId: siteId2
+      });
 
       assertEventsInDB(
         eventsInDB,
         events.concat([]).reverse(),
-        siteId,
+        siteId2,
         receivedAt
       );
     });
@@ -95,7 +105,6 @@ function mockEvents() {
       recordedAt: new Date()
     }
   ];
-  const siteId = TestUtils.genUuid();
   const receivedAt = new Date();
-  return { events, siteId, receivedAt };
+  return { events, receivedAt };
 }

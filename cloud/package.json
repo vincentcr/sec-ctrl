@@ -12,7 +12,9 @@
     "lint": "tslint --project .",
     "tscheck": "tsc --noEmit",
     "static-checks": "npm run lint && npm run tscheck",
-    "test-suite": "npm run static-checks && npm test"
+    "test-suite": "npm run static-checks && npm test",
+    "setup-dev-db": "NODE_ENV=dev npx ts-node src/models/setup.ts --drop --create=true --all  | npx bunyan",
+    "setup-test-db": "NODE_ENV=test sec_ctrl__logging__level=info npx ts-node src/models/setup.ts --drop --create=true --all  | npx bunyan"
   },
   "author": "Vincent Côté-Roy",
   "license": "ISC",
@@ -42,6 +44,7 @@
     "@types/sinon": "^5.0.1",
     "@types/uuid": "^3.4.3",
     "@types/verror": "^1.10.3",
+    "@types/yargs": "^11.1.1",
     "aws-sdk-mock": "^4.0.0",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
@@ -52,7 +55,8 @@
     "ts-node": "^6.1.1",
     "tslint": "^5.10.0",
     "tslint-config-prettier": "^1.13.0",
-    "typescript": "^2.9.1"
+    "typescript": "^2.9.1",
+    "yargs": "^12.0.1"
   },
   "dependencies": {
     "@koa/cors": "^2.2.1",

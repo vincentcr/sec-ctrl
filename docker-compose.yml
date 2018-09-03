@@ -1,35 +1,12 @@
 version: "3.2"
 services:
-  test:
-    build:
-      context: .
-      dockerfile: cloud/test/Dockerfile
-    links:
-      - test-cloud-db
-    environment:
-      sec_ctrl__db__port: 5432
-      sec_ctrl__db__host: test-cloud-db
-
   test-cloud-db:
-    build:
-      context: cloud/db
-      args:
-        DB_PASSWORD: sec_ctrl_test123
-    environment:
-      DB_NAME: sec_ctrl_test
-      DB_USER: sec_ctrl_test
+    image: postgres:10-alpine
     ports:
       - "2346:5432"
 
   cloud-db:
-    #image: sec-ctl-db
-    build:
-      context: cloud/db
-      args:
-        DB_NAME: sec_ctrl_dev
-    environment:
-      DB_USER: sec_ctrl_dev
-      DB_PASSWORD: sec_ctrl_dev123
+    image: postgres:10-alpine
     ports:
       - "5678:5432"
     volumes:

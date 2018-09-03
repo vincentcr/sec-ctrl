@@ -1,5 +1,6 @@
 import * as Knex from "knex";
 
+import { VError } from "verror";
 import { Config } from "../config";
 import { Logger } from "../logger";
 import { KeyMapper, mapKeys, mapObjectKeys } from "./KeyMapper";
@@ -10,7 +11,7 @@ interface BaseItem {
 
 export type ModelInitParams = { knex: Knex; config: Config; logger: Logger };
 
-export class BaseModel<TItem extends BaseItem> {
+export abstract class BaseModel<TItem extends BaseItem> {
   protected readonly knex: Knex;
   protected readonly logger: Logger;
   protected readonly config: Config;
@@ -35,6 +36,31 @@ export class BaseModel<TItem extends BaseItem> {
     this.fqTableName = schemaName + "." + tableName;
   }
 
+  async ensureSchema() {
+    const exists = await this.knex.schema.hasTable(this.fqTableName);
+    if (!exists) {
+      this.logger.info("Table %s does not exist, creating", this.fqTableName);
+
+      const createTable = this.knex.schema
+        .withSchema(this.schemaName)
+        .createTable(
+          this.tableName,
+
+          builder => this.createSchema(builder)
+        );
+      try {
+        await createTable;
+      } catch (err) {
+        throw new VError(
+          { cause: err, info: { sql: createTable.toString() } },
+          "Failed to create table " + this.fqTableName
+        );
+      }
+    }
+  }
+
+  protected abstract createSchema(builder: Knex.CreateTableBuilder): void;
+
   protected queryBuilder(transaction?: Knex.Transaction): Knex.QueryBuilder {
     const ctx = transaction != null ? transaction : this.knex;
 
@@ -58,10 +84,10 @@ export class BaseModel<TItem extends BaseItem> {
       "(" + mapKeys(constraintFields, "toDB", this.keyMapper) + ")";
     const insert = this.queryBuilder(transaction).insert(data);
     const update = this.knex.queryBuilder().update(data);
-    const result = await this.knex.raw(
-      `? ON CONFLICT ${constraint} DO ? returning *`,
-      [insert, update]
-    );
+    const query = this.knex
+      .raw(`? ON CONFLICT ${constraint} DO ? returning *`, [insert, update])
+      .toString();
+    const result = await this.knex.raw(query);
     const [itemRaw] = result.rows;
     const item = mapObjectKeys(itemRaw, "fromDB", this.keyMapper) as TItem;
     return item;

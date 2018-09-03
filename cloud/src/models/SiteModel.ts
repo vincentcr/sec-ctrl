@@ -12,6 +12,16 @@ export class SiteModel extends BaseModel<SiteRecord> {
     super(params, "sites");
   }
 
+  protected createSchema(builder: Knex.CreateTableBuilder) {
+    builder.string("id", 512).primary();
+    builder.string("name", 512);
+    builder
+      .uuid("owner_id")
+      .references("users.id")
+      .onDelete("restrict");
+    builder.specificType("system_trouble_status", "VARCHAR(256)[]");
+  }
+
   upsert(
     site: Partial<SiteRecord>,
     transaction?: Knex.Transaction

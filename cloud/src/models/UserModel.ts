@@ -23,6 +23,22 @@ export class UserModel extends BaseModel<UserRecord> {
     this.bcryptRounds = this.config.get("security").bcryptRounds;
   }
 
+  protected createSchema(builder: Knex.CreateTableBuilder) {
+    builder
+      .uuid("id")
+      .primary()
+      .defaultTo(this.knex.raw("ext.gen_random_uuid()"));
+    builder
+      .string("username", 256)
+      .notNullable()
+      .unique();
+    builder.string("hashed_password", 256).notNullable();
+    builder
+      .boolean("is_active")
+      .notNullable()
+      .defaultTo(true);
+  }
+
   async create(params: { username: string; password: string }): Promise<User> {
     const { username, password } = params;
     const hashedPassword = await bcrypt.hash(password, this.bcryptRounds);
@@ -99,12 +115,14 @@ export class UserModel extends BaseModel<UserRecord> {
   }
 
   async authenticateByToken(token: string): Promise<User> {
+    const now = new Date();
     const recs = await this.queryBuilder()
       .select("users.*")
-      .joinRaw(
-        "JOIN access_tokens ON validate_auth_token(access_tokens, users.id, ?)",
-        token
-      );
+      .join("access_tokens", "users.id", "=", "userID")
+      .where({ token })
+      .andWhere(builder => {
+        builder.whereNull("expiresAt").orWhere("expiresAt", ">", now);
+      });
 
     if (recs.length === 0) {
       throw new InvalidCredentialsError("Invalid token");

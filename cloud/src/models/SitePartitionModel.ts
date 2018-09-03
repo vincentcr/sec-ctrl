@@ -17,6 +17,20 @@ export class SitePartitionModel extends BaseModel<SitePartitionRecord> {
     super(params, "site_partitions");
   }
 
+  protected createSchema(builder: Knex.CreateTableBuilder) {
+    builder
+      .string("site_id", 512)
+      .notNullable()
+      .references("sites.id")
+      .onDelete("restrict");
+    builder.integer("id").notNullable();
+    builder.string("status", 256);
+    builder.boolean("trouble_state_led");
+    builder.specificType("keypad_led_flash_state", "VARCHAR(256)[]");
+    builder.specificType("keypad_led_state", "VARCHAR(256)[]");
+    builder.primary(["site_id", "id"]);
+  }
+
   upsert(
     partition: Partial<SitePartitionRecord>,
     transaction?: Knex.Transaction

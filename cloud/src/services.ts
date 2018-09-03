@@ -82,14 +82,14 @@ export class ServicesImpl {
     const { siteId, event, receivedAt } = params;
 
     await this.models.withTransaction(async transaction => {
+      await this.updateSite({ siteId, event, transaction });
+
       await this.models.SiteEvents.create({
         siteId,
         events: [event],
         receivedAt,
         transaction
       });
-
-      await this.updateSite({ siteId, event, transaction });
 
       await transaction.commit();
     });

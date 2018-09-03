@@ -14,6 +14,11 @@ type ConfigSpec = {
     user: string;
     password: string;
   };
+  adminDB: {
+    database: string;
+    user: string;
+    password: string;
+  };
   security: {
     bcryptRounds: 10;
   };

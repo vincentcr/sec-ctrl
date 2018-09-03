@@ -13,6 +13,18 @@ export class SiteZoneModel extends BaseModel<SiteZoneRecord> {
     super(params, "site_zones");
   }
 
+  protected createSchema(builder: Knex.CreateTableBuilder) {
+    builder
+      .string("site_id", 512)
+      .notNullable()
+      .references("sites.id")
+      .onDelete("restrict");
+    builder.integer("id").notNullable();
+    builder.integer("partition_id").notNullable();
+    builder.string("status", 256);
+    builder.primary(["site_id", "id"]);
+  }
+
   upsert(
     zone: Partial<SiteZoneRecord>,
     transaction?: Knex.Transaction

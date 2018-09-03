@@ -16,6 +16,19 @@ export class AccessTokenModel extends BaseModel<AccessToken> {
     super(params, "access_tokens");
   }
 
+  protected createSchema(builder: Knex.CreateTableBuilder) {
+    builder
+      .string("token", 1024)
+      .primary()
+      .defaultTo(this.knex.raw("encode(ext.gen_random_bytes(16), 'hex')"));
+    builder
+      .uuid("user_id")
+      .notNullable()
+      .references("users.id")
+      .onDelete("restrict");
+    builder.timestamp("expires_at", true);
+  }
+
   async create(userId: string): Promise<AccessToken> {
     const token = await this.genToken(32);
 

@@ -15,6 +15,17 @@ export class SiteEventModel extends BaseModel<SiteEventRecord> {
     super(params, "site_events");
   }
 
+  protected createSchema(builder: Knex.CreateTableBuilder) {
+    builder.bigIncrements("id").primary();
+    builder
+      .string("site_id", 512)
+      .notNullable()
+      .references("sites.id")
+      .onDelete("restrict");
+    builder.timestamp("received_at", true).notNullable();
+    builder.jsonb("event").notNullable();
+  }
+
   async create(params: {
     siteId: string;
     events: SiteEvent[];

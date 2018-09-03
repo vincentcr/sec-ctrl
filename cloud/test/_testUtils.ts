@@ -1,8 +1,4 @@
 // tslint:disable:no-console
-import * as childProcess from "child_process";
-import * as fs from "fs";
-import * as path from "path";
-import * as util from "util";
 
 import * as AWS from "aws-sdk";
 import * as chai from "chai";
@@ -15,10 +11,10 @@ import { Config, loadConfig } from "../src/config";
 import { createLogger, Logger } from "../src/logger";
 import { connect, initModels, Models } from "../src/models";
 import { BaseModel } from "../src/models/BaseModel";
+import * as DBSetup from "../src/models/setup";
 import { IotPublisher, Services, ServicesImpl } from "../src/services";
 
 const { expect } = chai;
-const readFile = util.promisify(fs.readFile);
 
 export interface MockIotPublisher {
   requests: AWS.IotData.Types.PublishRequest[];
@@ -35,9 +31,12 @@ let _logger: Logger;
 
 before(async () => {
   await initConfig();
+  const config = TestUtils.getConfig();
+  await DBSetup.drop(config, { schema: true });
+  await DBSetup.create(config, { schema: true });
+
   await initConnection();
   await initLogger();
-  await TestUtils.resetDB();
 });
 
 after(async () => {
@@ -71,14 +70,6 @@ export const TestUtils = {
     await work;
     const [{ count: countAfter }] = await conn.count("*").from(tableName);
     expect(countAfter).to.equal(countBefore);
-  },
-
-  async resetDB() {
-    if (process.env.NODE_ENV !== "test") {
-      throw new Error("NOPE: will only reset db in test environment");
-    }
-    const knex = this.getConnection();
-    await runDDLs(knex);
   },
 
   async createModels(): Promise<Models> {
@@ -136,16 +127,6 @@ export const TestUtils = {
 };
 
 export default TestUtils;
-
-async function runDDLs(knex: Knex) {
-  console.time("runDDLs");
-  for (const fname of ["tables.sql", "functions.sql"]) {
-    const fullPath = path.join(__dirname, "..", "db", fname);
-    const sql = await readFile(fullPath, "utf8");
-    await knex.raw(sql);
-  }
-  console.timeEnd("runDDLs");
-}
 
 async function initConfig() {
   _config = await loadConfig();
