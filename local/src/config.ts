@@ -1,8 +1,6 @@
-import * as fs from "fs";
-import * as _ from "lodash";
-import * as path from "path";
+import { LogLevelString } from "bunyan";
 
-const CONFIG_FOLDER = "./config";
+import { TypedConfig } from "../../common/typedConfig";
 
 export interface LocalConfig {
   port: number;
@@ -10,6 +8,9 @@ export interface LocalConfig {
   password: string;
   statusRefreshIntervalMs: number;
   keepAliveIntervalMs: number;
+  maxReconnectAttemts: number;
+  maxBackoffExponent: number;
+  maxWriteBufferSize: number;
 }
 
 export interface CloudConfig {
@@ -19,19 +20,14 @@ export interface CloudConfig {
 
 export interface Config {
   dataDir: string;
+  logging: {
+    level: LogLevelString;
+  };
   cloud: CloudConfig;
   local: LocalConfig;
 }
 
-export function loadConfig(): Config {
-  const defaults = loadFile(path.join(CONFIG_FOLDER, "default.json"));
-  const env = process.env.NODE_ENV || "dev";
-  const envFile = path.join(CONFIG_FOLDER, env + ".json");
-  const envConf = fs.existsSync(envFile) ? loadFile(envFile) : {};
-  return _.merge(defaults, envConf);
-}
-
-function loadFile(fname: string) {
-  const json = fs.readFileSync(fname).toString("utf-8");
-  return JSON.parse(json);
-}
+export default new TypedConfig<Config>({
+  directory: "config",
+  envPrefix: "sec_ctrl_local"
+});

@@ -1,126 +1,95 @@
-import {
-  ExpressionAttributeNameMap,
-  DocumentClient
-} from "aws-sdk/clients/dynamodb";
-import AWS = require("aws-sdk");
+import * as Knex from "knex";
+
 import { VError } from "verror";
+import { Config } from "../config";
+import { Logger } from "../logger";
+import { KeyMapper, mapKeys, mapObjectKeys } from "./KeyMapper";
 
-const TablePrefix = "secCtrl.";
-
-type DynamoPrimitive = string | number | boolean | Buffer;
-
-type DynamoValue =
-  | DynamoPrimitive
-  | DynamoPrimitive[]
-  | { [key: string]: DynamoValue };
-
-type UpdateParams = Omit<DocumentClient.UpdateItemInput, "TableName">;
-
-export interface QueryResultPage<T> {
-  readonly items: T[];
-  readonly cursor?: object;
+interface BaseItem {
+  [k: string]: any;
 }
 
-export class BaseModel<TItem> {
-  protected readonly dynamodbClient: AWS.DynamoDB.DocumentClient;
+export type ModelInitParams = { knex: Knex; config: Config; logger: Logger };
+
+export abstract class BaseModel<TItem extends BaseItem> {
+  protected readonly knex: Knex;
+  protected readonly logger: Logger;
+  protected readonly config: Config;
   protected readonly tableName: string;
-  protected constructor(
-    dynamodbClient: AWS.DynamoDB.DocumentClient,
-    tableName: string
+  protected readonly schemaName: string;
+  protected readonly keyMapper?: KeyMapper;
+  readonly fqTableName: string;
+
+  constructor(
+    params: ModelInitParams,
+    tableName: string,
+    keyMapper?: KeyMapper,
+    schemaName = "public"
   ) {
-    this.dynamodbClient = dynamodbClient;
-    this.tableName = TablePrefix + tableName;
+    this.knex = params.knex;
+    this.logger = params.logger;
+    this.config = params.config;
+
+    this.tableName = tableName;
+    this.schemaName = schemaName;
+    this.keyMapper = keyMapper;
+    this.fqTableName = schemaName + "." + tableName;
   }
 
-  protected async query(params: {
-    indexName?: string;
-    keyConditionExpression: string;
-    expressionAttributeValues?: { [key: string]: DynamoValue };
-    expressionAttributeNames?: ExpressionAttributeNameMap;
-    scanIndexForward?: boolean;
-    limit?: number;
-    exclusiveStartKey?: object;
-  }): Promise<QueryResultPage<TItem>> {
-    const {
-      keyConditionExpression,
-      indexName,
-      expressionAttributeValues,
-      expressionAttributeNames,
-      scanIndexForward,
-      limit,
-      exclusiveStartKey
-    } = params;
+  async ensureSchema() {
+    const exists = await this.knex.schema.hasTable(this.fqTableName);
+    if (!exists) {
+      this.logger.info("Table %s does not exist, creating", this.fqTableName);
 
-    const query = {
-      TableName: this.tableName,
-      IndexName: indexName,
-      KeyConditionExpression: keyConditionExpression,
-      ExpressionAttributeValues: expressionAttributeValues,
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExclusiveStartKey: exclusiveStartKey,
-      ScanIndexForward: scanIndexForward,
-      Limit: limit
-    };
+      const createTable = this.knex.schema
+        .withSchema(this.schemaName)
+        .createTable(
+          this.tableName,
 
-    const queryOutput = await this.dynamodbClient
-      .query(query)
-      .promise()
-      .catch(err => {
-        throw new VError(
-          { cause: err, info: { query } },
-          "Query error on " + this.tableName
+          builder => this.createSchema(builder)
         );
-      });
-
-    if (queryOutput.Items == null) {
-      return { items: [] };
-    }
-
-    const items = queryOutput.Items as TItem[];
-
-    return { items, cursor: queryOutput.LastEvaluatedKey };
-  }
-
-  protected async get(key: any): Promise<TItem | undefined> {
-    const req = { TableName: this.tableName, Key: key };
-    try {
-      const result = await this.dynamodbClient.get(req).promise();
-
-      if (result.Item == null) {
-        return undefined;
+      try {
+        await createTable;
+      } catch (err) {
+        throw new VError(
+          { cause: err, info: { sql: createTable.toString() } },
+          "Failed to create table " + this.fqTableName
+        );
       }
-
-      return result.Item as TItem;
-    } catch (err) {
-      throw new VError(
-        { cause: err, info: { req } },
-        "Failed to get item from " + this.tableName
-      );
     }
   }
 
-  protected async put(params: {
-    item: TItem;
-    condition?: string;
-    expressionAttributeValues?: { [key: string]: DynamoValue };
-    expressionAttributeNames?: ExpressionAttributeNameMap;
-  }) {
-    const req = {
-      TableName: this.tableName,
-      Item: params.item,
-      ConditionExpression: params.condition,
-      ExpressionAttributeNames: params.expressionAttributeNames,
-      ExpressionAttributeValues: params.expressionAttributeValues
-    };
+  protected abstract createSchema(builder: Knex.CreateTableBuilder): void;
 
-    // logger.debug({ item, req, type: this.constructor.name }, "put");
+  protected queryBuilder(transaction?: Knex.Transaction): Knex.QueryBuilder {
+    const ctx = transaction != null ? transaction : this.knex;
 
-    await this.dynamodbClient.put(req).promise();
+    const queryBuilder = ctx.withSchema(this.schemaName).table(this.tableName);
+
+    // Knex.QueryBuilder type definition is missing queryContext
+    (queryBuilder as any).queryContext({
+      keyMapper: this.keyMapper
+    });
+
+    return queryBuilder;
   }
 
-  protected async update(params: UpdateParams) {
-    await this.dynamodbClient
-      .update({ TableName: this.tableName, ...params })
-      .promise();
+  protected async upsertHelper(params: {
+    data: any;
+    constraintFields: string[];
+    transaction?: Knex.Transaction;
+  }): Promise<TItem> {
+    const { data, constraintFields, transaction } = params;
+    const constraint =
+      "(" + mapKeys(constraintFields, "toDB", this.keyMapper) + ")";
+    const insert = this.queryBuilder(transaction).insert(data);
+    const update = this.knex.queryBuilder().update(data);
+    const query = this.knex
+      .raw(`? ON CONFLICT ${constraint} DO ? returning *`, [insert, update])
+      .toString();
+    const result = await this.knex.raw(query);
+    const [itemRaw] = result.rows;
+    const item = mapObjectKeys(itemRaw, "fromDB", this.keyMapper) as TItem;
+    return item;
   }
 }

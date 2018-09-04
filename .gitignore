@@ -1,5 +1,6 @@
 dist
 node_modules
+.docker-state
 tmp*
 *.zip
 data

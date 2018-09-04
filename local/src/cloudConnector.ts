@@ -5,7 +5,10 @@ import * as awsIot from "aws-iot-device-sdk";
 import * as levelStore from "mqtt-level-store";
 
 import { SiteEvent } from "../../common/siteEvent";
-import { fromJSON, UserCommand } from "../../common/userCommand";
+import {
+  userCommandfromJSON,
+  UserCommandWithExpiration
+} from "../../common/userCommand";
 import { CloudConfig } from "./config";
 import createLogger, { Logger } from "./logger";
 
@@ -21,7 +24,7 @@ export class CloudConnector {
     this.dataDir = path.join(dataDir, config.clientId);
     this.clientId = config.clientId;
     this.host = config.host;
-    this.logger = createLogger(__filename, { thingID: config.clientId });
+    this.logger = createLogger(__filename, { thingId: config.clientId });
     this.emitter = new EventEmitter();
   }
 
@@ -62,36 +65,34 @@ export class CloudConnector {
     return `sec-ctrl/${this.clientId}/${name}`;
   }
 
-  publishEvent(evt: SiteEvent) {
+  publishEvent(event: SiteEvent) {
     if (this.device == null) {
-      throw new Error("device not connected. call start() first");
+      throw new Error("BUG: device not connected. call start() first");
     }
-    this.logger.debug(evt, "publish to ", this._mkTopic("events"));
-    this.device.publish(
-      this._mkTopic("events"),
-      JSON.stringify(evt),
-      { qos: 1 },
-      err => {
-        if (err != null) {
-          this.logger.debug("failed to publish message: ", err);
-        }
+    const topic = this._mkTopic("events");
+    this.logger.debug({ event }, "publish to %s", topic);
+    const payload = JSON.stringify(event);
+    this.device.publish(topic, payload, { qos: 1 }, err => {
+      if (err != null) {
+        this.logger.debug("failed to publish message: ", err);
       }
-    );
+    });
   }
 
-  _parseIncomingMessage(topic: string, payload: Buffer) {
-    this.logger.debug({ topic, payload }, "incoming message");
+  _parseIncomingMessage(topic: string, data: Buffer) {
+    this.logger.debug({ topic, data }, "incoming message");
 
     if (topic !== this._mkTopic("commands")) {
-      this.logger.error({ topic, payload }, "received unexpected message");
+      this.logger.error({ topic, data }, "received unexpected message");
       return;
     }
 
-    const cmd = fromJSON(payload.toString());
+    const cmd = userCommandfromJSON(data.toString());
+
     this.emitter.emit("command", cmd);
   }
 
-  onCommand(listener: (cmd: UserCommand) => void) {
+  onCommand(listener: (cmd: UserCommandWithExpiration) => void) {
     this.emitter.on("command", listener);
   }
 }

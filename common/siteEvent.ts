@@ -13,8 +13,7 @@ export const enum EventType {
 }
 
 export interface BaseEvent {
-  readonly date: Date;
-  readonly id: string;
+  readonly recordedAt: Date;
 }
 
 export interface InfoEvent extends BaseEvent {
@@ -42,7 +41,7 @@ export interface AlarmEvent extends BaseEvent {
   readonly code: string;
 }
 
-export const enum PartitionChangeEventType {
+export const enum PartitionChangeType {
   Status = "Status",
   KeypadLed = "KeypadLed",
   TroubleLed = "TroubleLed"
@@ -50,24 +49,24 @@ export const enum PartitionChangeEventType {
 
 export interface PartitionChangeBaseEvent extends BaseEvent {
   readonly type: EventType.PartitionChange;
-  readonly partitionID: number;
+  readonly partitionId: number;
 }
 
 export interface PartitionStatusChangeEvent extends PartitionChangeBaseEvent {
-  readonly changeType: PartitionChangeEventType.Status;
+  readonly changeType: PartitionChangeType.Status;
   readonly status: PartitionStatus;
 }
 
 export interface PartitionKeypadLedStateChangeEvent
   extends PartitionChangeBaseEvent {
-  readonly changeType: PartitionChangeEventType.KeypadLed;
+  readonly changeType: PartitionChangeType.KeypadLed;
   readonly keypadState: string[];
   readonly flash: boolean;
 }
 
 export interface PartitionTroubleLedStateChangeEvent
   extends PartitionChangeBaseEvent {
-  readonly changeType: PartitionChangeEventType.TroubleLed;
+  readonly changeType: PartitionChangeType.TroubleLed;
   readonly on: boolean;
 }
 
@@ -78,16 +77,16 @@ export type PartitionChangeEvent =
 
 export interface ZoneChangeEvent extends BaseEvent {
   readonly type: EventType.ZoneChange;
-  readonly zoneID: number;
+  readonly zoneId: number;
   readonly status: ZoneStatus;
-  readonly partitionID: number;
+  readonly partitionId: number;
 }
 
 export interface PartitionEvent extends BaseEvent {
   readonly type: EventType.Partition;
-  readonly partitionID: number;
+  readonly partitionId: number;
   readonly code: string;
-  readonly userID?: string;
+  readonly userId?: string;
 }
 
 export type SiteEvent =

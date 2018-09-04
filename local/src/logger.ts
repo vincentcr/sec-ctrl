@@ -2,9 +2,11 @@ import * as path from "path";
 
 import * as bunyan from "bunyan";
 
+import config from "./config";
+
 const logger = bunyan.createLogger({
-  name: "event-processor",
-  level: "debug",
+  name: "sec-ctrl-local",
+  level: config.get("logging").level,
   serializers: bunyan.stdSerializers
 });
 

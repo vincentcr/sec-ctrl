@@ -8,7 +8,7 @@ export const enum PartitionStatus {
 }
 
 export interface Partition {
-  id: string;
+  id: number;
   status: PartitionStatus;
   troubleStateLed: boolean;
   keypadLedFlashState: string[];

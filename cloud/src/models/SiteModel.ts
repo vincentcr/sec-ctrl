@@ -1,212 +1,108 @@
-import { BaseModel } from "./BaseModel";
-import { VError } from "verror";
-import {
-  ZoneChangeEvent,
-  PartitionChangeEvent,
-  PartitionChangeEventType,
-  SystemTroubleStatusEvent,
-  SiteEvent,
-  EventType
-} from "../../../common/siteEvent";
-import logger from "../logger";
-import { SiteAlreadyClaimedError, SiteDoesNotExistError } from "../errors";
-import { Site } from "../../../common/site";
+import * as Knex from "knex";
 
-export class SiteModel extends BaseModel<Site> {
-  constructor(dynamodbClient: AWS.DynamoDB.DocumentClient) {
-    super(dynamodbClient, "sites");
+import { Site } from "../../../common/site";
+import { EventType, SiteEvent } from "../../../common/siteEvent";
+import { SiteAlreadyClaimedError } from "../errors";
+import { BaseModel, ModelInitParams } from "./BaseModel";
+
+export type SiteRecord = Omit<Omit<Site, "partitions">, "zones">;
+
+export class SiteModel extends BaseModel<SiteRecord> {
+  constructor(params: ModelInitParams) {
+    super(params, "sites");
   }
 
-  async getByThingID(thingID: string): Promise<Site | undefined> {
-    return this.get({ thingID });
+  protected createSchema(builder: Knex.CreateTableBuilder) {
+    builder.string("id", 512).primary();
+    builder.string("name", 512);
+    builder
+      .uuid("owner_id")
+      .references("users.id")
+      .onDelete("restrict");
+    builder.specificType("system_trouble_status", "VARCHAR(256)[]");
+  }
+
+  upsert(
+    site: Partial<SiteRecord>,
+    transaction?: Knex.Transaction
+  ): Promise<SiteRecord> {
+    return this.upsertHelper({
+      data: site,
+      constraintFields: ["id"],
+      transaction
+    });
+  }
+
+  upsertFromEvent(params: {
+    id: string;
+    event: SiteEvent;
+    transaction: Knex.Transaction;
+  }) {
+    const { transaction, id, event } = params;
+    const systemTroubleStatus =
+      event.type === EventType.SystemTroubleStatus ? event.status : undefined;
+
+    const data: Partial<SiteRecord> = { id, systemTroubleStatus };
+
+    this.logger.debug({ data, event, id }, "SiteModel.upsertFromEvent");
+
+    return this.upsert(data, transaction);
   }
 
   async claim(params: {
-    thingID: string;
-    claimedByID: string;
+    id: string;
+    ownerId: string;
     name: string;
   }): Promise<void> {
-    const { thingID, claimedByID, name } = params;
+    const { id, ownerId, name } = params;
+    const nAffected = await this.queryBuilder()
+      .update({ name, ownerId })
+      .whereNull("ownerId")
+      .and.where({ id });
 
-    if ((await this.getByThingID(thingID)) == null) {
-      throw new SiteDoesNotExistError();
-    }
-
-    const req = {
-      Key: { thingID },
-      UpdateExpression: "SET #claimedByID = :claimedByID, #name = :name",
-      ExpressionAttributeNames: {
-        "#claimedByID": "claimedByID",
-        "#name": "name"
-      },
-      ExpressionAttributeValues: {
-        ":claimedByID": claimedByID,
-        ":name": name
-      },
-      ConditionExpression: "attribute_not_exists(#claimedByID)"
-    };
-    try {
-      await this.update(req);
-    } catch (err) {
-      if (err.code === "ConditionalCheckFailedException") {
-        throw new SiteAlreadyClaimedError();
-      } else {
-        throw new VError(
-          { cause: err, info: req },
-          "unexpected db error in claim"
-        );
-      }
+    if (nAffected === 0) {
+      throw new SiteAlreadyClaimedError();
     }
   }
 
-  async updateFromEvent(thingID: string, event: SiteEvent) {
-    switch (event.type) {
-      case EventType.PartitionChange:
-        await this.updatePartitionFromEvent(thingID, event);
-        break;
-      case EventType.ZoneChange:
-        await this.updateZoneFromEvent(thingID, event);
-        break;
-      case EventType.SystemTroubleStatus:
-        await this.updateSystemTroubleStatusFromEvent(thingID, event);
-        break;
-    }
+  async getByID(id: string): Promise<Site | undefined> {
+    const rows = await this.queryBuilder().where({ id });
+    return rows[0];
   }
 
-  private async updatePartitionFromEvent(
-    thingID: string,
-    event: PartitionChangeEvent
-  ) {
-    const { partitionID } = event;
+  async getPopulatedSites(...ids: string[]): Promise<SiteRecord[]> {
+    const q = this.queryBuilder()
+      .column(this.knex.raw("sites.*"))
+      .column(
+        this.knex.raw(`(
+          SELECT json_agg(zones) FROM (
+            SELECT  id,
+                    partition_id,
+                    status
+              FROM site_zones
+              WHERE site_zones.site_id = sites.id
+              ORDER BY partition_id, site_zones.id
+          ) AS zones
+        ) AS zones`)
+      )
+      .column(
+        this.knex.raw(`(
+          SELECT json_agg(partitions) FROM (
+            SELECT  id,
+                    keypad_led_flash_state,
+                    keypad_led_state,
+                    status,
+                    trouble_state_led
+              FROM site_partitions
+              WHERE site_partitions.site_id = sites.id
+              ORDER BY site_partitions.id
+          ) AS partitions
+        ) AS partitions`)
+      )
+      .select()
+      .whereIn("sites.id", ids)
+      .orderBy("sites.id");
 
-    logger.debug({ thingID, event }, "updatePartitionFromEvent");
-
-    try {
-      await this.update({
-        Key: { thingID },
-        UpdateExpression: "SET #parts = :initParts",
-        ExpressionAttributeNames: {
-          "#parts": "partitions"
-        },
-        ExpressionAttributeValues: {
-          ":initParts": {}
-        },
-        ConditionExpression: "attribute_not_exists(#parts)"
-      });
-    } catch (err) {
-      if (err.code !== "ConditionalCheckFailedException") {
-        throw err;
-      }
-    }
-
-    try {
-      await this.update({
-        Key: { thingID },
-        UpdateExpression: "SET #parts.#part = :initPart",
-        ExpressionAttributeNames: {
-          "#parts": "partitions",
-          "#part": partitionID.toString()
-        },
-        ExpressionAttributeValues: {
-          ":initPart": {}
-        },
-        ConditionExpression: "attribute_not_exists(#parts.#part)"
-      });
-    } catch (err) {
-      if (err.code !== "ConditionalCheckFailedException") {
-        throw err;
-      }
-    }
-
-    let props: any;
-
-    switch (event.changeType) {
-      case PartitionChangeEventType.Status:
-        props = { status: event.status };
-        break;
-      case PartitionChangeEventType.KeypadLed:
-        const propName = event.flash ? "keypadLedFlashState" : "keypadLedState";
-        props = { [propName]: event.keypadState };
-        break;
-      case PartitionChangeEventType.TroubleLed:
-        props = { troubleLed: event.on };
-        break;
-      default:
-        throw new Error("unmapped change type:" + JSON.stringify(event));
-    }
-
-    const updateNames: { [k: string]: any } = { "#partitionID": "partitionID" };
-    const updateAttrs: { [k: string]: any } = { ":partitionID": partitionID };
-    for (const [key, val] of Object.entries(props)) {
-      updateAttrs[":" + key] = val;
-      updateNames["#" + key] = key;
-    }
-
-    const updateExp =
-      "SET " +
-      Object.keys(props)
-        .map(key => `#parts.#part.#${key}=:${key}`)
-        .join(",");
-
-    await this.update({
-      Key: { thingID },
-      UpdateExpression: updateExp,
-      ExpressionAttributeNames: {
-        "#parts": "partitions",
-        "#part": partitionID.toString(),
-        ...updateNames
-      },
-      ExpressionAttributeValues: updateAttrs
-    });
-  }
-
-  private async updateZoneFromEvent(
-    thingID: string,
-    { zoneID, partitionID, status }: ZoneChangeEvent
-  ) {
-    const zone = { zoneID, partitionID, status };
-
-    logger.debug({ thingID, zone }, "updateZoneFromEvent");
-
-    try {
-      await this.update({
-        Key: { thingID },
-        UpdateExpression: "SET zones = :initZones",
-        ExpressionAttributeValues: {
-          ":initZones": {}
-        },
-        ConditionExpression: "attribute_not_exists(zones)"
-      });
-    } catch (err) {
-      if (err.code !== "ConditionalCheckFailedException") {
-        throw err;
-      }
-    }
-
-    await this.update({
-      Key: { thingID },
-      UpdateExpression: `SET zones.#zoneID = :zone`,
-      ExpressionAttributeNames: { "#zoneID": zoneID.toString() },
-      ExpressionAttributeValues: {
-        ":zone": zone
-      }
-    });
-  }
-
-  private async updateSystemTroubleStatusFromEvent(
-    thingID: string,
-    event: SystemTroubleStatusEvent
-  ) {
-    const { status } = event;
-
-    logger.debug({ thingID, status }, "updateSystemTroubleStatusFromEvent");
-
-    await this.update({
-      Key: { thingID },
-      UpdateExpression: `SET systemTroubleStatus = :status`,
-      ExpressionAttributeValues: {
-        ":status": status
-      }
-    });
+    return await q;
   }
 }

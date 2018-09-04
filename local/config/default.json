@@ -8,7 +8,13 @@
     "port": 4025,
     "hostname": "localhost",
     "password": "mock123",
+    "maxReconnectAttemts": 1024,
+    "maxBackoffExponent": 16,
+    "maxWriteBufferSize": 65536,
     "statusRefreshIntervalMs": 300000,
     "keepAliveIntervalMs": 30000
+  },
+  "logging": {
+    "level": "debug"
   }
 }

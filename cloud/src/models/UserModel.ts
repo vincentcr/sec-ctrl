@@ -1,117 +1,132 @@
-import * as uuid from "uuid";
 import * as bcrypt from "bcrypt";
-import { User } from ".";
-import { BaseModel } from "./BaseModel";
-import { VError } from "verror";
+import * as Knex from "knex";
+import * as uuid from "uuid";
+
+import { User } from "../../../common/user";
 import {
+  InvalidCredentialsError,
   UserAlreadyExistsError,
-  IDNotFoundError,
-  UsernameNotFoundError,
-  InvalidCredentialsError
+  UsernameNotFoundError
 } from "../errors";
-import logger from "../logger";
+import { BaseModel, ModelInitParams } from "./BaseModel";
 
-interface UserPrivate extends User {
+export type UserRecord = User & {
   readonly hashedPassword: string;
-}
+  readonly isActive: boolean;
+};
 
-export class UserModel extends BaseModel<UserPrivate> {
-  constructor(dynamodbClient: AWS.DynamoDB.DocumentClient) {
-    super(dynamodbClient, "users");
+export class UserModel extends BaseModel<UserRecord> {
+  private readonly bcryptRounds: number;
+
+  constructor(params: ModelInitParams) {
+    super(params, "users");
+    this.bcryptRounds = this.config.get("security").bcryptRounds;
+  }
+
+  protected createSchema(builder: Knex.CreateTableBuilder) {
+    builder
+      .uuid("id")
+      .primary()
+      .defaultTo(this.knex.raw("ext.gen_random_uuid()"));
+    builder
+      .string("username", 256)
+      .notNullable()
+      .unique();
+    builder.string("hashed_password", 256).notNullable();
+    builder
+      .boolean("is_active")
+      .notNullable()
+      .defaultTo(true);
   }
 
   async create(params: { username: string; password: string }): Promise<User> {
     const { username, password } = params;
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, this.bcryptRounds);
 
-    const user = {
+    const userRecord: UserRecord = {
       id: uuid.v4(),
-      username: params.username,
-      sites: []
+      username,
+      hashedPassword,
+      isActive: true
     };
+
     try {
-      await this.put({
-        item: { ...user, hashedPassword },
-        condition: "attribute_not_exists(username)"
-      });
-      return user;
+      await this.queryBuilder().insert(userRecord);
     } catch (err) {
-      if (err.code === "ConditionalCheckFailedException") {
+      if (err.code === "23505") {
         throw new UserAlreadyExistsError();
-      } else {
-        throw new VError({ cause: err }, "unexpected db error");
       }
-    }
-  }
-
-  async getByID(id: string): Promise<User | undefined> {
-    const res = await this.query({
-      indexName: "id-index",
-      keyConditionExpression: "id=:id",
-      expressionAttributeValues: {
-        ":id": id
-      }
-    });
-
-    if (res.items.length === 0) {
-      throw new IDNotFoundError();
+      throw err;
     }
 
-    const [privateUser] = res.items;
-
-    return UserModel.toPublicUser(privateUser);
+    return UserModel.toUser(userRecord);
   }
 
-  private static toPublicUser(privateUser: UserPrivate): User {
-    const { hashedPassword, ...user } = privateUser;
+  async getByID(id: string, onlyActive = false): Promise<User | undefined> {
+    const q = this.queryBuilder()
+      .select()
+      .where({ id });
+
+    if (onlyActive) {
+      q.andWhere({ isActive: true });
+    }
+
+    const res = await q;
+
+    if (res.length === 0) {
+      return undefined;
+    }
+
+    const [userRecord] = res;
+
+    return UserModel.toUser(userRecord);
+  }
+
+  private static toUser(
+    userRecord: UserRecord
+  ): { username: string; id: string } {
+    const { hashedPassword, isActive, ...user } = userRecord;
     return user;
   }
 
-  async authenticate(params: {
+  async authenticateByPassword(params: {
     username: string;
     password: string;
   }): Promise<User> {
     const { username, password } = params;
 
-    const privateUser = await this.get({ username });
-    if (privateUser == null) {
+    const [userRecord]: UserRecord[] = await this.queryBuilder()
+      .select()
+      .where({ username });
+
+    if (userRecord == null) {
       throw new UsernameNotFoundError();
     }
 
     const validPassword = await bcrypt.compare(
       password,
-      privateUser.hashedPassword
+      userRecord.hashedPassword
     );
     if (!validPassword) {
       throw new InvalidCredentialsError();
     }
 
-    return UserModel.toPublicUser(privateUser);
+    return UserModel.toUser(userRecord);
   }
 
-  async addClaimedThing(params: {
-    username: string;
-    thingID: string;
-    name: string;
-  }) {
-    const { username, thingID, name } = params;
+  async authenticateByToken(token: string): Promise<User> {
+    const now = new Date();
+    const recs = await this.queryBuilder()
+      .select("users.*")
+      .join("access_tokens", "users.id", "=", "userID")
+      .where({ token })
+      .andWhere(builder => {
+        builder.whereNull("expiresAt").orWhere("expiresAt", ">", now);
+      });
 
-    await this.update({
-      Key: { username },
-      UpdateExpression:
-        "set #sites = list_append(if_not_exists(#sites, :emptyList), :site)",
-      ExpressionAttributeNames: {
-        "#sites": "sites"
-      },
-      ExpressionAttributeValues: {
-        ":site": [
-          {
-            thingID,
-            name
-          }
-        ],
-        ":emptyList": []
-      }
-    });
+    if (recs.length === 0) {
+      throw new InvalidCredentialsError("Invalid token");
+    }
+    return UserModel.toUser(recs[0]);
   }
 }

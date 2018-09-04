@@ -1,13 +1,17 @@
+import * as VError from "verror";
+
 import { ClientCode, ServerCode } from "./codes";
 import { decodeIntCode, encodeIntCode } from "./encodings";
 
 const CODE_LEN = 3;
 const CHECKSUM_LEN = 2;
 
-function mkMessageClass<TCode extends number>(
-  codeDesc: (code: TCode) => string
+type CodeDescriptor<TCode> = (code: TCode) => string;
+
+export function makeMessageClass<TCode extends number>(
+  codeDescriptor: CodeDescriptor<TCode>
 ) {
-  return class Message {
+  class Message {
     readonly code: TCode;
     readonly data: Buffer;
 
@@ -21,13 +25,12 @@ function mkMessageClass<TCode extends number>(
       const len = CODE_LEN + this.data.length + CHECKSUM_LEN;
       const bytes = Buffer.allocUnsafe(len);
 
-      const encodedCode = encodeIntCode(this.code);
-      bytes.write(encodedCode);
+      const codeOffset = encodeIntCode(this.code, bytes);
       if (this.data != null) {
-        this.data.copy(bytes, encodedCode.length);
+        this.data.copy(bytes, codeOffset);
       }
 
-      const dataEndIdx = this.data.length + encodedCode.length;
+      const dataEndIdx = this.data.length + codeOffset;
       const checksum = computeChecksum(bytes.slice(0, dataEndIdx));
 
       bytes.write(checksum, dataEndIdx);
@@ -37,14 +40,17 @@ function mkMessageClass<TCode extends number>(
 
     toString() {
       return (
-        `${this.constructor.name} ` +
-        `{ code: ${codeDesc(this.code)}; data: ${this.data} }`
+        `${this.constructor.name}` +
+        `[code: '${codeDescriptor(this.code)}'; data: '${this.data}']`
       );
     }
 
-    static decode(bytes: Buffer): Message {
+    static decode(bytes: Buffer) {
       if (bytes.length < 5) {
-        throw new Error(`Got ${bytes.length} bytes, need at least 5`);
+        throw new VError(
+          { name: "MessageTooSmall", info: { bytes } },
+          "Message too small, need at least 5 bytes"
+        );
       }
 
       // CODE-DATA-CHECKSUM
@@ -62,19 +68,28 @@ function mkMessageClass<TCode extends number>(
       const actualChecksum = computeChecksum(bytes.slice(0, dataEnd));
 
       if (expectedChecksum.toLowerCase() !== actualChecksum.toLowerCase()) {
-        throw new Error(
-          `failed to decode message ${bytes}: ` +
-            `data ${data}, expected checksum ${expectedChecksum}, actual ${actualChecksum}`
+        throw new VError(
+          {
+            name: "MessageChecksumMismatch",
+            info: {
+              bytes,
+              expectedChecksum,
+              actualChecksum
+            }
+          },
+          "Failed to decode message: checksum mismatch"
         );
       }
 
       const code = decodeIntCode(codeBytes) as TCode;
 
-      const msg = new Message(code, data);
+      const msg = new this(code, data);
 
       return msg;
     }
-  };
+  }
+
+  return Message;
 }
 
 function computeChecksum(bytes: Buffer): string {
@@ -88,10 +103,9 @@ function computeChecksum(bytes: Buffer): string {
   return checksum;
 }
 
-export class ServerMessage extends mkMessageClass<ServerCode>(
-  (c: ServerCode) => ServerCode[c]
+export class ServerMessage extends makeMessageClass<ServerCode>(
+  c => ServerCode[c]
 ) {}
-
-export class ClientMessage extends mkMessageClass<ClientCode>(
+export class ClientMessage extends makeMessageClass<ClientCode>(
   c => ClientCode[c]
 ) {}

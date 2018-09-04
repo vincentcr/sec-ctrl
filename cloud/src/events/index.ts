@@ -1,44 +1,29 @@
-import { Context, DynamoDBStreamEvent } from "aws-lambda";
-import * as AWS from "aws-sdk";
+import { Context } from "aws-lambda";
 
-import logger from "../logger";
-import { SiteEventRecord } from "../models";
-import Services from "../services";
+import { SiteEvent } from "../../../common/siteEvent";
+import { Services } from "../services";
 
-export async function handler(data: DynamoDBStreamEvent, context: Context) {
-  logger.debug(data, "dynamo event");
+export interface SecCtrlIoTPayload {
+  event: SiteEvent;
+  receivedAt: string;
+  thingId: string;
+}
 
-  const services = await Services.create();
+export async function handler(
+  services: Services,
+  payload: SecCtrlIoTPayload,
+  context: Context
+) {
+  services.logger.debug(payload, "IoT event");
 
   try {
-    await processAll(data, services);
+    await services.saveEvent({
+      siteId: payload.thingId,
+      event: payload.event,
+      receivedAt: new Date(payload.receivedAt)
+    });
   } catch (err) {
-    logger.error({ data, err }, "failed to process event with payload");
+    services.logger.error({ payload, err }, "failed to process event");
+    context.fail(err);
   }
-}
-
-async function processAll(data: DynamoDBStreamEvent, services: Services) {
-  for (const record of parseDynamoEvent(data)) {
-    await processEventRecord({ services, record });
-  }
-}
-
-function parseDynamoEvent(data: DynamoDBStreamEvent): SiteEventRecord[] {
-  return data.Records.filter(({ eventName }) => eventName === "INSERT").map(
-    ({ dynamodb }) => {
-      const img = dynamodb!.NewImage!;
-      const evt = AWS.DynamoDB.Converter.unmarshall(img) as SiteEventRecord;
-      logger.info(evt, "event record");
-      return evt;
-    }
-  );
-}
-
-async function processEventRecord(params: {
-  services: Services;
-  record: SiteEventRecord;
-}) {
-  const { services, record } = params;
-  const { models } = services;
-  await models.Sites.updateFromEvent(record.thingID, record.data.event);
 }

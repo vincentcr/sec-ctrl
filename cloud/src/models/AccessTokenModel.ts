@@ -1,32 +1,48 @@
-import { promisify } from "util";
 import * as crypto from "crypto";
+import * as Knex from "knex";
+import { promisify } from "util";
 
-import { BaseModel } from "./BaseModel";
+import { BaseModel, ModelInitParams } from "./BaseModel";
 
 const randomBytes = promisify(crypto.randomBytes);
 
 export interface AccessToken {
-  readonly userID: string;
+  readonly userId: string;
   readonly token: string;
 }
 
 export class AccessTokenModel extends BaseModel<AccessToken> {
-  constructor(dynamodbClient: AWS.DynamoDB.DocumentClient) {
-    super(dynamodbClient, "accessTokens");
+  constructor(params: ModelInitParams) {
+    super(params, "access_tokens");
   }
 
-  async create(userID: string): Promise<AccessToken> {
+  protected createSchema(builder: Knex.CreateTableBuilder) {
+    builder
+      .string("token", 1024)
+      .primary()
+      .defaultTo(this.knex.raw("encode(ext.gen_random_bytes(16), 'hex')"));
+    builder
+      .uuid("user_id")
+      .notNullable()
+      .references("users.id")
+      .onDelete("restrict");
+    builder.timestamp("expires_at", true);
+  }
+
+  async create(userId: string): Promise<AccessToken> {
     const token = await this.genToken(32);
 
     const accessToken = {
       token,
-      userID
+      userId
     };
-    await this.put({ item: accessToken });
+
+    await this.queryBuilder().insert(accessToken);
+
     return accessToken;
   }
 
-  async genToken(numBytes: number) {
+  private async genToken(numBytes: number) {
     const tokenBytes = await randomBytes(numBytes);
     const token = tokenBytes
       .toString("base64")
@@ -36,12 +52,9 @@ export class AccessTokenModel extends BaseModel<AccessToken> {
     return token;
   }
 
-  async authenticate(token: string): Promise<string | undefined> {
-    const rec = await this.get({ token });
-    if (rec != null && token === rec.token) {
-      return rec.userID;
-    } else {
-      return undefined;
-    }
+  async delete(token: string): Promise<void> {
+    await this.queryBuilder()
+      .delete()
+      .where({ token });
   }
 }

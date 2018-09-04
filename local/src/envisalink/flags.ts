@@ -1,3 +1,5 @@
+import * as VError from "verror";
+
 export interface Flag {
   value: number;
   desc: string;
@@ -12,7 +14,7 @@ export default class Flags {
     this.definitions = definitions;
   }
 
-  toStrings(flagBits: number) {
+  toStrings(flagBits: number): string[] {
     const flags = this.decompose(flagBits);
     return flags.map(({ desc }) => desc);
   }
@@ -29,13 +31,16 @@ export default class Flags {
     }
 
     if (remainder !== 0) {
-      throw new Error(
-        "invalid flag bits: " +
-          flagBits.toString(2) +
-          "; non-zero remainder: " +
-          remainder.toString(2) +
-          "; parsed flags: " +
-          JSON.stringify(flags)
+      throw new VError(
+        {
+          name: "InvalidFlagNonZeroRemainder",
+          info: {
+            bits: flagBits.toString(2),
+            remainder: remainder.toString(2),
+            parsedFlags: flags
+          }
+        },
+        "invalid flag bits: non-zero remainder"
       );
     }
 

@@ -1,0 +1,6 @@
+.git
+cloud/node_modules
+common/node_modules
+local/node_modules
+web/node_modules
+.docker-state

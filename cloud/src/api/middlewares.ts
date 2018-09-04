@@ -1,22 +1,22 @@
-import * as Router from "koa-router";
-import initValidators, { ValidatorBuilder } from "./validate";
 import { Context } from "koa";
+import * as Router from "koa-router";
 import { IMiddleware } from "koa-router";
+import initValidators, { ValidatorBuilder } from "./validate";
 
+import { User } from "../../../common/user";
 import {
+  InvalidCredentialsError,
   SiteDoesNotExistError,
-  UserNotAuthorizedError,
-  InvalidCredentialsError
+  UserNotAuthorizedError
 } from "../errors";
-import { User } from "../models";
-import Services from "../services";
+import { Services } from "../services";
 
-export type Middlewares = {
+export interface Middlewares {
   validators: ValidatorBuilder;
   authenticate: IMiddleware;
   authorize: IMiddleware;
   getClaimedSite: IMiddleware;
-};
+}
 
 export async function setupMiddlewares({
   models
@@ -27,8 +27,8 @@ export async function setupMiddlewares({
     validators,
     async getClaimedSite(ctx: Router.IRouterContext, next: () => Promise<any>) {
       const user = ctx.state.user as User;
-      const site = await models.Sites.getByThingID(ctx.params.thingID);
-      if (site == null || site.claimedByID !== user.id) {
+      const site = await models.Sites.getByID(ctx.params.siteId);
+      if (site == null || site.ownerId !== user.id) {
         throw new SiteDoesNotExistError();
       }
 
@@ -37,17 +37,18 @@ export async function setupMiddlewares({
     },
 
     async authenticate(ctx: Router.IRouterContext, next: () => Promise<any>) {
-      const tok = findRequestAuthToken(ctx);
-      if (tok == null) {
+      const token = findRequestAuthToken(ctx);
+      if (token == null) {
         return next();
       }
 
-      const userID = await models.AccessTokens.authenticate(tok);
-      if (userID == null) {
+      const user = await models.Users.authenticateByToken(token);
+      if (user == null) {
         throw new InvalidCredentialsError("invalid token");
       }
 
-      ctx.state.user = await models.Users.getByID(userID);
+      ctx.state.user = user;
+      ctx.state.token = token;
       return next();
     },
 
@@ -64,7 +65,7 @@ export async function setupMiddlewares({
 
 function findRequestAuthToken(ctx: Context): string | undefined {
   if (typeof ctx.headers.authorization === "string") {
-    const match = /^Token (.+)$/.exec(ctx.headers.authorization);
+    const match = /^Bearer (.+)$/.exec(ctx.headers.authorization);
     if (match != null) {
       return match[1];
     }

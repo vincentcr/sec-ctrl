@@ -3,10 +3,8 @@ import * as path from "path";
 import { promisify } from "util";
 
 import * as Ajv from "ajv";
-import { NextFunction, Request, RequestHandler, Response } from "express";
 import { IMiddleware, IRouterContext } from "koa-router";
 import { ValidationError } from "../errors";
-import { MediaStore } from "aws-sdk";
 
 const readdir = promisify(fs.readdir);
 const readFile = promisify(fs.readFile);

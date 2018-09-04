@@ -1,0 +1,22 @@
+{
+  "http": {
+    "port": 3231
+  },
+  "db": {
+    "host": "localhost",
+    "port": 5678,
+    "database": "sec_ctrl_dev",
+    "user": "sec_ctrl_dev",
+    "password": "sec_ctrl_dev123"
+  },
+  "adminDB": {
+    "user": "postgres",
+    "database": "postgres"
+  },
+  "security": {
+    "bcryptRounds": 8
+  },
+  "logging": {
+    "level": "debug"
+  }
+}
