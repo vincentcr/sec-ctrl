@@ -75,7 +75,7 @@ jobs:
           at: ~/repo
       - run:
           name: Deploy to Lambda
-          command: aws lambda update-function-code --function-name sec-ctrl --zip-file fileb:///~/repo/cloud/out/lambda.zip
+          command: aws lambda update-function-code --function-name sec-ctrl --zip-file fileb://cloud/out/lambda.zip
 
 workflows:
   version: 2
