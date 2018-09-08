@@ -41,6 +41,9 @@ jobs:
       - run:
           name: Transpile TypeScript files
           command: cd cloud && ./node_modules/.bin/tsc
+      - run:
+          name: Build archive
+          command: cd cloud && mkdir out && zip -q -r out/lambda.zip .
       - persist_to_workspace:
           root: ~/repo
           paths:
@@ -63,29 +66,6 @@ jobs:
           name: Run tests
           command: cd cloud && npm test
 
-      # - run:
-      #     name: run test suite
-      #     command: docker-compose up test
-      # - run:
-      #     name: see what's out there
-      #     command: ls *
-      # - run:
-      #     name: start test postgres db
-      #     command: docker-compose up -d test-cloud-db
-      # - run:
-      #     name: wait for db
-      #     command: |
-      #       for i in `seq 1 10`;
-      #       do
-      #         nc -z localhost 2346 && echo Success && exit 0
-      #         echo -n .
-      #         sleep 1
-      #       done
-      #       echo Failed waiting for Postgress && exit 1
-      # - run:
-      #     name: Run tests
-      #     command: cd cloud && npm test
-
   deploy:
     docker:
       - image: cibuilds/aws:latest
@@ -94,11 +74,8 @@ jobs:
       - attach_workspace:
           at: ~/repo
       - run:
-          name: Build archive
-          command: cd cloud && mkdir out && zip -q -r out/lambda.zip .
-      - run:
           name: Deploy to Lambda
-          command: aws lambda update-function-code --function-name sec-ctrl --zip-file fileb:///tmp/out/lambda.zip
+          command: aws lambda update-function-code --function-name sec-ctrl --zip-file fileb:///~/repo/cloud/out/lambda.zip
 
 workflows:
   version: 2
