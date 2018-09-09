@@ -14,6 +14,7 @@ export async function handler(
 ) {
   await lazyInitServer(services);
   // casting to any because @types definition is not up to date and doesn't support 4th parameter.
+  console.log("serving request");
   const { promise } = (awsServerlessExpress.proxy as any)(
     server,
     event,

@@ -10,6 +10,7 @@ export async function handler(
   event: APIGatewayEvent | events.SecCtrlIoTPayload,
   context: Context
 ) {
+  console.log("starting up");
   const services = await getServicesInstance();
   terminationHooks(services);
 
