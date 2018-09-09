@@ -42,6 +42,7 @@ export async function loadConfig(): Promise<Config> {
 }
 
 async function loadSsmConfig(config: Config) {
+  console.log("loadSsmConfig start");
   const ssmRoot = config.get("ssmRoot");
   if (ssmRoot != null) {
     const ssmConf = await fetchSsmConf(ssmRoot);
@@ -49,6 +50,7 @@ async function loadSsmConfig(config: Config) {
       config.set(name, value);
     }
   }
+  console.log("loadSsmConfig end");
 }
 
 async function fetchSsmConf(root: string) {
