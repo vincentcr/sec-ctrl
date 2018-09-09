@@ -13,7 +13,15 @@ export async function handler(
   context: Context
 ) {
   await lazyInitServer(services);
-  awsServerlessExpress.proxy(server, event, context);
+  // casting to any because @types definition is not up to date and doesn't support 4th parameter.
+  const { promise } = (awsServerlessExpress.proxy as any)(
+    server,
+    event,
+    context,
+    "PROMISE"
+  );
+
+  return promise;
 }
 
 async function lazyInitServer(services: Services): Promise<void> {

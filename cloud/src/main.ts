@@ -15,10 +15,10 @@ export async function handler(
 
   if ("thingId" in event) {
     // iot event
-    await events.handler(services, event, context);
+    return events.handler(services, event, context);
   } else if ("headers" in event) {
     // api request
-    await api.handler(services, event, context);
+    return api.handler(services, event, context);
   } else {
     // not supposed to happen
     throw new Error("Unexpected event: " + JSON.stringify(event));

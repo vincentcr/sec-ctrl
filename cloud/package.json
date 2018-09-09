@@ -7,7 +7,7 @@
     "build": "../_bin/build",
     "clean": "../_bin/clean",
     "deploy": "AWS_PROFILE=polymatix LAMBDA_NAME=sec-ctrl ../_bin/lambda-deploy",
-    "dev": "AWS_PROFILE=polymatix npx nodemon -x ts-node src/api/local.ts | npx bunyan",
+    "dev": "AWS_PROFILE=polymatix npx nodemon -x ts-node src/api/dev.ts | npx bunyan",
     "test": "mocha --recursive test/**/*.test.ts",
     "lint": "tslint --project .",
     "tscheck": "tsc --noEmit",
@@ -61,7 +61,7 @@
   "dependencies": {
     "@koa/cors": "^2.2.1",
     "ajv": "^6.5.0",
-    "aws-serverless-express": "^3.2.0",
+    "aws-serverless-express": "^3.3.5",
     "bcrypt": "^2.0.1",
     "body-parser": "^1.18.3",
     "bunyan": "^1.8.12",
