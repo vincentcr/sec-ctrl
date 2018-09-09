@@ -47,6 +47,7 @@ async function loadSchema(schemaPath: string): Promise<[string, object]> {
 function validate(ajv: Ajv.Ajv, schemaName: string): IMiddleware {
   return (ctx: IRouterContext, next: () => Promise<any>) => {
     const { query, body } = ctx.request;
+    console.log("validating", schemaName, query, body);
     const valid = ajv.validate(schemaName, { query, body });
     if (valid) {
       return next();

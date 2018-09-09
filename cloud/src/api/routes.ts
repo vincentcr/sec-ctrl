@@ -40,9 +40,11 @@ function setupUsersRoutes({ services, app, middlewares }: RouteBuilderParam) {
   });
 
   router.post("/signin", validators("users-signin"), async ctx => {
+    console.log("entering signin route");
     const user = await models.Users.authenticateByPassword(ctx.request.body);
     const accessToken = await models.AccessTokens.create(user.id);
     ctx.response.body = { user, token: accessToken.token };
+    console.log("leaving signin route");
   });
 
   router.get("/me", authorize, async ctx => {
